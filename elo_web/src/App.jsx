@@ -1,6 +1,13 @@
 import { useState } from 'react';
+import { Link, Route, Routes } from 'react-router-dom';
 import ellipseSrc from './assets/ellipse.png';
 import heroVid from './assets/vids/hero_vid.mp4';
+import { ArrowUpRight } from './components/Icons.jsx';
+import { SiteFooter } from './components/SiteFooter.jsx';
+import { SiteNav } from './components/SiteNav.jsx';
+import ComparePage from './pages/ComparePage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
+import RatingsPage from './pages/RatingsPage.jsx';
 import './App.css';
 
 // const messiPhotos = import.meta.glob('./assets/messi.png', {
@@ -400,21 +407,6 @@ function StoryChart({ points, years, peak, scale, title }) {
   );
 }
 
-function ArrowUpRight({ size = 16 }) {
-  return (
-    <svg className="btn-arrow" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M4 12 12 4M6.5 4H12v5.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function CheckMark() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
@@ -514,10 +506,15 @@ function StorySection() {
               <li><CheckMark /> Season history with visible peaks</li>
               <li><CheckMark /> Shared context across the graph</li>
             </ul>
-            <a className="btn btn-ghost btn-explore-profiles" href="#ratings">
-              Explore Profiles
-              <ArrowUpRight size={14} />
-            </a>
+            <div className="story-aside-actions">
+              <Link className="btn btn-ghost btn-explore-profiles" to="/compare">
+                Compare
+              </Link>
+              <Link className="btn btn-ghost btn-explore-profiles" to="/ratings">
+                Explore Profiles
+                <ArrowUpRight size={14} />
+              </Link>
+            </div>
           </aside>
         </div>
 
@@ -567,19 +564,19 @@ function ClosingSection() {
           <FaqList />
         </div>
 
-        <div className="cta">
+        <div className="cta" id="analyst">
           <img className="cta-ellipse" src={ellipseSrc} alt="" />
           <p className="cta-eyebrow">Less guesswork. More football.</p>
           <h2>Bringing a better lens to the beautiful game.</h2>
           <p className="cta-lede">Explore the records. Compare the eras. Ask the next question.</p>
           <div className="cta-actions">
-            <a className="btn btn-lime btn-explore" href="#ratings">
+            <Link className="btn btn-lime btn-explore" to="/ratings">
               Explore Ratings
               <ArrowUpRight size={10} />
-            </a>
-            <a className="btn btn-ghost btn-analyst" href="#analyst">
+            </Link>
+            <a className="btn btn-lime btn-explore" href="#analyst">
               Try AI Analyst
-              <ArrowUpRight />
+              <ArrowUpRight size={10} />
             </a>
           </div>
         </div>
@@ -610,67 +607,11 @@ function FaqList() {
   );
 }
 
-function SiteFooter() {
-  return (
-    <footer className="site-footer">
-      <div className="wrap footer-inner">
-        <div className="footer-brand">
-          <a className="logo" href="/">EloStats Football</a>
-          <p>A persistent football intelligence platform. A shared language for careers, peaks, and eras.</p>
-        </div>
-        <div>
-          <h3>Product</h3>
-          <a href="#ratings">Features</a>
-          <a href="#method">Methodology</a>
-          <a href="#method">Era Engine</a>
-          <a href="#ratings">Pricing</a>
-        </div>
-        <div>
-          <h3>Methodology</h3>
-          <a href="#analyst">AI Analyst</a>
-          <a href="#method">Model Governance</a>
-          <a href="#method">Data Coverage</a>
-          <a href="#faq">FAQ</a>
-        </div>
-        <div>
-          <h3>Company</h3>
-          <a href="#ratings">About</a>
-          <a href="#ratings">Team</a>
-          <a href="#ratings">Contact</a>
-          <a href="#ratings">Careers</a>
-        </div>
-        <div>
-          <h3>Legal</h3>
-          <a href="#ratings">Privacy</a>
-          <a href="#ratings">Terms</a>
-          <a href="#ratings">Data &amp; Disclaimers</a>
-          <a href="#ratings">Security</a>
-        </div>
-      </div>
-      <div className="wrap footer-base">
-        <span>© 2026 EloStats Football</span>
-        <span>Illustrative demo data throughout · Independent design, no club or league affiliation</span>
-      </div>
-    </footer>
-  );
-}
-
-export default function App() {
+function LandingPage() {
   return (
     <div className="page">
       <div className="wrap">
-      <header className="nav">
-        <a className="logo" href="/">EloStats Football</a>
-        <nav className="nav-links">
-          <a href="#ratings">Ratings</a>
-          <a href="#analyst">AI Analyst</a>
-          <a href="#method">Methodology</a>
-        </nav>
-        <a className="btn btn-lime btn-explore nav-cta" href="#ratings">
-          Explore Ratings
-          <ArrowUpRight size={10} />
-        </a>
-      </header>
+      <SiteNav />
 
       <section className="hero">
         <div className="hero-copy">
@@ -681,13 +622,13 @@ export default function App() {
             Normalization, and a grounded AI Analyst.
           </p>
           <div className="hero-actions">
-            <a className="btn btn-lime btn-explore" href="#ratings">
+            <Link className="btn btn-lime btn-explore" to="/ratings">
               Explore Ratings
               <ArrowUpRight size={10} />
-            </a>
-            <a className="btn btn-ghost btn-analyst" href="#analyst">
+            </Link>
+            <a className="btn btn-lime btn-explore" href="#analyst">
               Launch AI Analyst
-              <ArrowUpRight />
+              <ArrowUpRight size={10} />
             </a>
           </div>
           <p className="fineprint">One persistent record. Different eras. More meaningful debate.</p>
@@ -821,5 +762,16 @@ export default function App() {
       <ClosingSection />
       <SiteFooter />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/ratings" element={<RatingsPage />} />
+      <Route path="/profile/:type/:id" element={<ProfilePage />} />
+      <Route path="/compare" element={<ComparePage />} />
+    </Routes>
   );
 }
