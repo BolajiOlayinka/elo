@@ -1,3 +1,31 @@
+export function MenuIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        d="M3 5h12M3 9h12M3 13h12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        d="M4.5 4.5 13.5 13.5M13.5 4.5 4.5 13.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function ArrowUpRight({ size = 16 }) {
   return (
     <svg className="btn-arrow" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
