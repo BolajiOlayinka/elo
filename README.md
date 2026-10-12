@@ -10,7 +10,7 @@ This repo is a **monolith**. Express serves `/api/v1` and the React SPA from the
 elo_project/
 ├── elo_web/          React + Vite SPA (landing, ratings, profile, compare)
 ├── elo_backend/      Express 5, Knex, Postgres, ingest CLIs
-├── elo_admin/        placeholder
+├── elo_admin/        Admin SPA (served at /admin/)
 ├── package.json      Heroku / monolith start + web build
 └── Procfile          web: node elo_backend/src/index.js
 ```
@@ -57,6 +57,7 @@ Default port is `3000` (`PORT` in `.env`).
 | `GET /api/health` | Always on |
 | `/api/v1` | Mounted only when `REDIS_URL` is set; otherwise `503` |
 | `/admin/queues` | Bull Board, development + Redis |
+| `/admin/` | Admin SPA (`elo_admin`), including `/admin/points` |
 | `/` and SPA routes | Built web, or `elo_web/dist` |
 
 Knex **development** always uses local Docker (`DB_HOST` / `DB_PORT=5447`). Production uses `DATABASE_URL` with SSL.
@@ -68,7 +69,7 @@ npm run build:web
 npm start
 ```
 
-`build:web` copies `elo_web/dist` into `elo_backend/public/web`.
+`build:web` copies `elo_web/dist` into `elo_backend/public/web` and `elo_admin/dist` into `elo_backend/public/admin`.
 
 ## Ingest
 
@@ -120,7 +121,7 @@ Do not log or commit secrets.
 
 ## Deploy
 
-Heroku expects Node 22. Root `heroku-postbuild` builds the SPA, then installs backend production deps.
+Heroku expects Node 22. Root `heroku-postbuild` builds the public and admin SPAs, then installs backend production deps. Point settings is `https://<app>.herokuapp.com/admin/points`.
 
 ```
 web: node elo_backend/src/index.js

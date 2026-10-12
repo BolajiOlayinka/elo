@@ -3,7 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const env = require('./config/env');
 const errorHandler = require('./shared/middleware/error-handler');
-const { mountWeb } = require('./web/static');
+const { mountAdmin, mountWeb } = require('./web/static');
 
 const app = express();
 
@@ -50,6 +50,7 @@ if (env.REDIS_URL) {
     });
 }
 
+mountAdmin(app);
 mountWeb(app);
 
 app.use(errorHandler);
