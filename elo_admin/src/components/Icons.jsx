@@ -63,6 +63,49 @@ export function IconMenu() {
   );
 }
 
+export function IconBlog() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4 2.5h8v11H4z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6 5.5h4M6 8h4M6 10.5h2.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconChevron() {
+  return (
+    <svg className="chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconEye() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="8" cy="8" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function IconPencil() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M9.2 3.4 12.6 6.8 6 13.4H2.6V10Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="m8 4.6 3.4 3.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function IconTrash() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3.5 4.5h9M6 4.5V3h4v1.5M5 6.5l.4 6h5.2l.4-6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconSearch() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

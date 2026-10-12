@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5174/admin/](http://localhost:5174/admin/). Point settings is `/admin/points`.
+Open [http://localhost:5174/admin/](http://localhost:5174/admin/). Point settings is `/admin/points`. Blog is `/admin/blog` (Milkdown editor, MIT).
 
 A root `npm run build:web` copies this build to `elo_backend/public/admin` so Express can serve `/admin/` and `/admin/points`. `/admin/queues` stays Bull Board.
 

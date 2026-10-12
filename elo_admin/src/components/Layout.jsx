@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { SESSION } from '../data/demo.js';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../auth.jsx';
 import {
   IconBadge,
+  IconBlog,
+  IconChevron,
   IconCog,
   IconGrid,
   IconMenu,
@@ -15,13 +17,69 @@ const LINKS = [
   { to: '/', label: 'Dashboard', icon: IconGrid, end: true },
   { to: '/users', label: 'Users', icon: IconUsers },
   { to: '/points', label: 'Point settings', icon: IconPoints },
+  {
+    to: '/blog',
+    label: 'Blog',
+    icon: IconBlog,
+    children: [
+      { to: '/blog', label: 'Posts', end: true },
+      { to: '/blog/categories', label: 'Categories' },
+      { to: '/blog/tags', label: 'Tags' }
+    ]
+  },
   { to: '/staffs', label: 'Staffs', icon: IconBadge },
   { to: '/roles', label: 'User roles', icon: IconShield },
   { to: '/settings', label: 'Settings', icon: IconCog }
 ];
 
+function NavItem({ link, onNavigate }) {
+  const location = useLocation();
+  const onSection = Boolean(link.children && (location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)));
+  const [toggled, setToggled] = useState(false);
+  const open = onSection || toggled;
+
+  if (!link.children) {
+    return (
+      <NavLink to={link.to} end={link.end} onClick={onNavigate}>
+        <link.icon />
+        {link.label}
+      </NavLink>
+    );
+  }
+
+  return (
+    <div className="nav-group">
+      <button
+        type="button"
+        className={`nav-group-toggle${onSection ? ' is-current' : ''}${open ? ' is-open' : ''}`}
+        aria-expanded={open}
+        onClick={() => setToggled((value) => !value)}
+      >
+        <link.icon />
+        {link.label}
+        <IconChevron />
+      </button>
+      {open ? (
+        <div className="nav-sub">
+          {link.children.map((child) => (
+            <NavLink
+              key={child.to}
+              to={child.to}
+              end={child.end}
+              onClick={onNavigate}
+            >
+              {child.label}
+            </NavLink>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function Layout() {
   const [open, setOpen] = useState(false);
+  const { session, logout } = useAuth();
 
   return (
     <div className={open ? 'shell is-open' : 'shell'}>
@@ -35,22 +93,15 @@ export function Layout() {
         </div>
         <nav>
           {LINKS.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              onClick={() => setOpen(false)}
-            >
-              <link.icon />
-              {link.label}
-            </NavLink>
+            <NavItem key={link.to} link={link} onNavigate={() => setOpen(false)} />
           ))}
         </nav>
         <div className="sidebar-user">
-          <span className="avatar">{SESSION.firstName[0]}{SESSION.lastName[0]}</span>
+          <span className="avatar">{session.firstName[0]}{session.lastName[0]}</span>
           <div>
-            <strong>{SESSION.firstName} {SESSION.lastName}</strong>
-            <p>{SESSION.role}</p>
+            <strong>{session.firstName} {session.lastName}</strong>
+            <p>{session.role}</p>
+            <button type="button" className="text-btn" onClick={logout}>Sign out</button>
           </div>
         </div>
       </aside>
