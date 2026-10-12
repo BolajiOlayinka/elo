@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import playerCards from '../assets/vids/player_cards.mp4';
 import { CompareIcon, EyeIcon, StarIcon } from '../components/Icons.jsx';
 import { Avatar, Flag } from '../components/EntityMarks.jsx';
+import { RatingsHero } from '../components/RatingsHero.jsx';
 import { SiteNav } from '../components/SiteNav.jsx';
 import { getRankings, PAGE_SIZE, RATING_TABS } from '../data/rankings.js';
 import { SiteFooter } from '../components/SiteFooter.jsx';
@@ -20,20 +20,7 @@ export default function RatingsPage() {
         <SiteNav />
       </div>
 
-      <section className="ratings-hero">
-        <video
-          className="ratings-hero-video"
-          src={playerCards}
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-        <div className="ratings-hero-copy">
-          <h1>Every ranking starts with a question.</h1>
-          <p>Switch the entity. Read the order. Open a profile or put two records side by side.</p>
-        </div>
-      </section>
+      <RatingsHero />
 
       <div className="page-divider" />
 

@@ -1,0 +1,5 @@
+elo_backend/data
+elo_backend/.git
+elo_web/node_modules
+**/data/raw
+**/.DS_Store

@@ -1,0 +1,14 @@
+{
+  "name": "elo-project",
+  "private": true,
+  "description": "EloStats monolith: Express API + web SPA",
+  "scripts": {
+    "start": "node elo_backend/src/index.js",
+    "build:web": "node elo_backend/scripts/build-web.js",
+    "heroku-postbuild": "npm run build:web && npm install --omit=dev --ignore-scripts --prefix elo_backend"
+  },
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  }
+}

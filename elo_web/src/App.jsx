@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
 import ellipseSrc from './assets/ellipse.png';
-import heroVid from './assets/vids/hero_vid.mp4';
 import { ArrowUpRight } from './components/Icons.jsx';
+import { HomeHeroCard } from './components/HomeHeroCard.jsx';
+import { TrendingComparisons } from './components/TrendingComparisons.jsx';
 import { SiteFooter } from './components/SiteFooter.jsx';
 import { SiteNav } from './components/SiteNav.jsx';
 import ComparePage from './pages/ComparePage.jsx';
@@ -517,35 +518,19 @@ function StorySection() {
             </div>
           </aside>
         </div>
+      </div>
 
-        <div className="compare">
-          <h2>Better comparisons in three moves.</h2>
-          <div className="compare-grid">
-            <article>
-              <span>01</span>
-              <h3>Choose the question</h3>
-              <p>
-                Compare two legends, a pair of peak seasons, or a cohort.
-                Start with the entities that matter to you.
-              </p>
-            </article>
-            <article>
-              <span>02</span>
-              <h3>Choose the lens</h3>
-              <p>
-                Switch between Career Points, Season Points, and normalized
-                peak. Make the comparison explicit.
-              </p>
-            </article>
-            <article>
-              <span>03</span>
-              <h3>Inspect the context</h3>
-              <p>
-                Read the peer group, follow the record, and ask the Analyst
-                why the numbers differ.
-              </p>
-            </article>
-          </div>
+      <div className="compare">
+        <div className="wrap">
+          <h2>Trending Comparisons</h2>
+          <p className="compare-sub">Let the points decide. Explore the comparisons everyone is talking about.</p>
+        </div>
+        <TrendingComparisons />
+        <div className="wrap trend-after">
+          <a className="btn btn-lime btn-explore" href="#method">
+            See how it works
+            <ArrowUpRight size={10} />
+          </a>
         </div>
       </div>
     </section>
@@ -635,14 +620,7 @@ function LandingPage() {
         </div>
 
         <div className="hero-media">
-          <video
-            className="hero-video"
-            src={heroVid}
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
+          <HomeHeroCard />
         </div>
 
         {/*

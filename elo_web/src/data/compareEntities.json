@@ -1,0 +1,304 @@
+{
+  "raya": {
+    "name": "David Raya",
+    "zoom": 0.92,
+    "country": "Spain",
+    "club": "Arsenal",
+    "group": "keeper",
+    "from": 2014,
+    "to": null,
+    "glow": "#e8e03a"
+  },
+  "rodri": {
+    "name": "Rodri",
+    "country": "Spain",
+    "club": "Barcelona",
+    "group": "midfielder",
+    "from": 2015,
+    "to": null,
+    "glow": "#e0364b"
+  },
+  "buffon": {
+    "name": "Gianluigi Buffon",
+    "country": "Italy",
+    "club": "Juventus",
+    "group": "keeper",
+    "from": 1995,
+    "to": 2023,
+    "glow": "#9fb4c7"
+  },
+  "neuer": {
+    "name": "Manuel Neuer",
+    "country": "Germany",
+    "club": "Bayern Munich",
+    "group": "keeper",
+    "from": 2006,
+    "to": null,
+    "glow": "#e0364b"
+  },
+  "courtois": {
+    "name": "Thibaut Courtois",
+    "country": "Belgium",
+    "club": "Real Madrid",
+    "group": "keeper",
+    "from": 2009,
+    "to": null,
+    "glow": "#5ec8ff"
+  },
+  "ferguson": {
+    "name": "Alex Ferguson",
+    "country": "Scotland",
+    "club": "Man United",
+    "group": "coach",
+    "from": 1974,
+    "to": 2013,
+    "glow": "#e0364b"
+  },
+  "guardiola": {
+    "name": "Pep Guardiola",
+    "country": "Spain",
+    "club": "Man City",
+    "group": "coach",
+    "from": 2008,
+    "to": null,
+    "glow": "#5ec8ff"
+  },
+  "ancelotti": {
+    "name": "Carlo Ancelotti",
+    "country": "Italy",
+    "club": "Real Madrid",
+    "group": "coach",
+    "from": 1995,
+    "to": null,
+    "glow": "#e8c15a"
+  },
+  "mourinho": {
+    "name": "José Mourinho",
+    "country": "Portugal",
+    "club": "Chelsea",
+    "group": "coach",
+    "from": 2000,
+    "to": null,
+    "glow": "#2d6cdf"
+  },
+  "klopp": {
+    "name": "Jürgen Klopp",
+    "country": "Germany",
+    "club": "Liverpool",
+    "group": "coach",
+    "from": 2001,
+    "to": 2024,
+    "glow": "#e0364b"
+  },
+  "messi": {
+    "name": "Lionel Messi",
+    "country": "Argentina",
+    "club": "Inter Miami",
+    "group": "attacker",
+    "glow": "#5fb0ff",
+    "era": "xxxx–xxxx",
+    "from": 2004,
+    "to": null
+  },
+  "ronaldo": {
+    "name": "Cristiano Ronaldo",
+    "country": "Portugal",
+    "club": "Al Nassr",
+    "group": "attacker",
+    "glow": "#e0364b",
+    "era": "xxxx–xxxx",
+    "from": 2002,
+    "to": null
+  },
+  "kane": {
+    "name": "Harry Kane",
+    "country": "England",
+    "club": "Bayern Munich",
+    "group": "attacker",
+    "glow": "#e0364b",
+    "era": "xxxx–xxxx",
+    "from": 2011,
+    "to": null
+  },
+  "bellingham": {
+    "name": "Jude Bellingham",
+    "country": "England",
+    "club": "Real Madrid",
+    "group": "midfielder",
+    "glow": "#4d7cff",
+    "era": "xxxx–xxxx",
+    "from": 2019,
+    "to": null
+  },
+  "yamal": {
+    "name": "Lamine Yamal",
+    "country": "Spain",
+    "club": "Barcelona",
+    "group": "attacker",
+    "glow": "#c2417f",
+    "era": "xxxx–xxxx",
+    "from": 2023,
+    "to": null
+  },
+  "mbappe": {
+    "name": "Kylian Mbappé",
+    "country": "France",
+    "club": "Real Madrid",
+    "group": "attacker",
+    "glow": "#ff8a3d",
+    "era": "xxxx–xxxx",
+    "from": 2015,
+    "to": null
+  },
+  "neymar": {
+    "name": "Neymar Jr.",
+    "country": "Brazil",
+    "club": "Santos",
+    "group": "attacker",
+    "glow": "#f2d633",
+    "era": "xxxx–xxxx",
+    "from": 2009,
+    "to": null
+  },
+  "raphinha": {
+    "name": "Raphinha",
+    "country": "Brazil",
+    "club": "Barcelona",
+    "group": "attacker",
+    "glow": "#c2417f",
+    "era": "xxxx–xxxx",
+    "from": 2015,
+    "to": null
+  },
+  "vinicius": {
+    "name": "Vinicius Jr.",
+    "country": "Brazil",
+    "club": "Real Madrid",
+    "group": "attacker",
+    "glow": "#34d17a",
+    "era": "xxxx–xxxx",
+    "from": 2018,
+    "to": null
+  },
+  "rashford": {
+    "name": "Marcus Rashford",
+    "country": "England",
+    "club": "Man United",
+    "group": "attacker",
+    "glow": "#e0364b",
+    "era": "xxxx–xxxx",
+    "from": 2016,
+    "to": null
+  },
+  "haaland": {
+    "name": "Erling Haaland",
+    "country": "Norway",
+    "club": "Man City",
+    "group": "attacker",
+    "glow": "#5ec8ff",
+    "era": "xxxx–xxxx",
+    "from": 2018,
+    "to": null
+  },
+  "olise": {
+    "name": "Michael Olise",
+    "country": "France",
+    "club": "Bayern Munich",
+    "group": "attacker",
+    "glow": "#e0364b",
+    "era": "xxxx–xxxx",
+    "from": 2019,
+    "to": null
+  },
+  "beckham": {
+    "name": "David Beckham",
+    "country": "England",
+    "club": "Man United",
+    "group": "midfielder",
+    "from": 1992,
+    "to": 2013,
+    "glow": "#e0364b"
+  },
+  "lampard": {
+    "name": "Frank Lampard",
+    "country": "England",
+    "club": "Chelsea",
+    "group": "midfielder",
+    "from": 1995,
+    "to": 2017,
+    "glow": "#2d6cdf"
+  },
+  "okocha": {
+    "name": "Jay-Jay Okocha",
+    "country": "Nigeria",
+    "club": "PSG",
+    "group": "midfielder",
+    "from": 1990,
+    "to": 2008,
+    "glow": "#2fbf71"
+  },
+  "debruyne": {
+    "name": "Kevin De Bruyne",
+    "country": "Belgium",
+    "club": "Napoli",
+    "group": "midfielder",
+    "from": 2008,
+    "to": null,
+    "glow": "#5ec8ff"
+  },
+  "maradona": {
+    "name": "Diego Maradona",
+    "country": "Argentina",
+    "club": "Napoli",
+    "group": "attacker",
+    "from": 1976,
+    "to": 1997,
+    "glow": "#6cb7ff"
+  },
+  "pele": {
+    "name": "Pelé",
+    "zoom": 1.2,
+    "country": "Brazil",
+    "club": "Santos",
+    "group": "attacker",
+    "from": 1956,
+    "to": 1977,
+    "glow": "#f2d633"
+  },
+  "ronaldinho": {
+    "name": "Ronaldinho",
+    "country": "Brazil",
+    "club": "Barcelona",
+    "group": "attacker",
+    "from": 1998,
+    "to": 2015,
+    "glow": "#d1355f"
+  },
+  "henry": {
+    "name": "Thierry Henry",
+    "country": "France",
+    "club": "Arsenal",
+    "group": "attacker",
+    "from": 1994,
+    "to": 2014,
+    "glow": "#e0364b"
+  },
+  "rooney": {
+    "name": "Wayne Rooney",
+    "country": "England",
+    "club": "Man United",
+    "group": "attacker",
+    "from": 2002,
+    "to": 2021,
+    "glow": "#e0364b"
+  },
+  "zidane": {
+    "name": "Zinedine Zidane",
+    "country": "France",
+    "club": "Real Madrid",
+    "group": "midfielder",
+    "from": 1989,
+    "to": 2006,
+    "glow": "#e8c15a"
+  }
+}
