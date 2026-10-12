@@ -3,3 +3,10 @@ elo_backend/node_modules/
 elo_web/node_modules/
 elo_admin/node_modules/
 elo_frontend/node_modules/
+
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
