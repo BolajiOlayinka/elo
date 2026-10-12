@@ -1,0 +1,29 @@
+services:
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: elo_postgres
+    ports:
+      - "5447:5432"
+    environment:
+      POSTGRES_DB: elo_points
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: elo_points_redis
+    restart: always
+    ports:
+      - "6375:6377"
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db:
+    name: elo_points
