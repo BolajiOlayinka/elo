@@ -19,12 +19,12 @@ import {
   InfoIcon,
   MedalIcon,
   PeakIcon,
-  ShieldIcon,
   TrophyIcon,
   UserPlusIcon
 } from '../components/Icons.jsx';
 import { Avatar } from '../components/EntityMarks.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
+import { getAwardImage } from '../data/awards.js';
 import { getRankingItem, getRankings, RATING_TABS } from '../data/rankings.js';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
@@ -252,20 +252,17 @@ export default function ProfilePage() {
                   <button type="button">{t('dossier.seeMore')}</button>
                 </div>
                 <ul className="player-awards">
-                  {item.accolades.map((award) => (
-                    <li key={award.name}>
-                      <MedalIcon />
-                      <strong>{award.name}</strong>
-                      <span>×{award.count || 1}</span>
-                    </li>
-                  ))}
-                  {item.trophies.slice(0, 3).map((trophy) => (
-                    <li key={trophy.name}>
-                      <ShieldIcon />
-                      <strong>{trophy.name}</strong>
-                      <span>×{trophy.count || 1}</span>
-                    </li>
-                  ))}
+                  {item.accolades.map((award) => {
+                    const image = getAwardImage(award.name);
+
+                    return (
+                      <li key={award.name}>
+                        {image ? <img src={image} alt="" /> : <MedalIcon />}
+                        <strong>{award.name}</strong>
+                        <span>×{award.count || 1}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </article>
             </section>

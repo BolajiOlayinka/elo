@@ -65,8 +65,11 @@ export function getRankings(tabId) {
       ],
       accolades: [
         { name: 'Ballon d’Or', count: index % 4 },
-        { name: 'FIFA Best', count: index % 3 },
-        { name: 'Golden Boot', count: 1 + (index % 2) }
+        { name: 'FIFA The Best Player', count: index % 3 },
+        { name: 'Golden Boot', count: 1 + (index % 2) },
+        { name: 'European Golden Shoe', count: 1 + (index % 2) },
+        { name: 'Yashin Trophy', count: index % 2 },
+        { name: 'FIFPRO World XI', count: 1 }
       ],
       seasons: [
         { year: '2004/05', club, note: 'First team debut' },

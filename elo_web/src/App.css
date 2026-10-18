@@ -3835,6 +3835,12 @@
   color: var(--muted);
 }
 
+.player-awards img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
 .player-awards strong {
   color: var(--text);
   font-size: 12px;
