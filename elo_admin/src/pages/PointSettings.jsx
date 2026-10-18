@@ -14,7 +14,7 @@ import {
 } from '../data/demo.js';
 import { previewForTab } from '../engine/scorePreview.js';
 
-const STORAGE_KEY = 'elo-admin-point-config-v3';
+const STORAGE_KEY = 'elo-admin-point-config-v5';
 
 function loadConfig() {
   try {
@@ -102,10 +102,11 @@ function ObjectivityPreview({ tab, config }) {
       <article className="panel">
         <h2>Club Elo from results</h2>
         <p className="muted">
-          NPFL first division is not automatically stronger than the Championship. League
-          strength is the mean club Elo after results. Bridges are FA Cup / EFL Cup /
-          promotion (Championship ↔ Premier League) and continental ties (NPFL ↔ Europe).
-          A player’s goal is scaled by the opponent they actually faced, not by “1st” or “2nd”.
+          No typed division multipliers. PL ↔ Championship is weakly identified by cups
+          and promotion. NPFL ↔ Europe is not identified from club results — CAF does not
+          touch UEFA. Transfer offsets are the missing bridge; until they are fitted,
+          isolated leagues sit near 1500. A player’s attacking actions use the opponent
+          they actually faced, capped Q, not “1st” or “2nd”.
         </p>
         <h3 className="preview-sub">Derived league strength</h3>
         <div className="table-scroll">
@@ -155,9 +156,9 @@ function ObjectivityPreview({ tab, config }) {
     <article className="panel">
       <h2>Does this rank more objectively?</h2>
       <p className="muted">
-        Live demo seasons. Counting is the old model (goals, pass volume, saves, full trophies).
-        Performance is per 90 × opponent Elo. Honours stay on their own column and are not added in.
-        Change a weight above and this table moves.
+        Counting is the old model. Performance Elo is within-role z (minutes-shrunk) after
+        Q on attack only. Elo + honours blends a capped individual-award bonus; team medals
+        stay in the cabinet. Ranked by Performance Elo.
       </p>
       <div className="table-scroll">
         <table className="table compact preview-table">
@@ -165,8 +166,9 @@ function ObjectivityPreview({ tab, config }) {
             <tr>
               <th>Person</th>
               <th>Counting</th>
-              <th>Performance</th>
-              <th>Honours</th>
+              <th>Performance Elo</th>
+              <th>Elo + honours</th>
+              <th>Cabinet</th>
               <th>Move</th>
             </tr>
           </thead>
@@ -186,8 +188,12 @@ function ObjectivityPreview({ tab, config }) {
                     <p className="muted">#{row.oldRank}</p>
                   </td>
                   <td>
-                    {fmt(row.rate)}
-                    <p className="muted">#{row.rateRank} · season {fmt(row.seasonPoints)}</p>
+                    {fmt(row.playerElo)}
+                    <p className="muted">#{row.rateRank} · rate {fmt(row.rate)}</p>
+                  </td>
+                  <td>
+                    {fmt(row.eloPlus)}
+                    <p className="muted">#{row.plusRank}</p>
                   </td>
                   <td>{fmt(row.honours)}</td>
                   <td>
@@ -306,8 +312,8 @@ export default function PointSettings() {
         <div>
           <h1>Point settings</h1>
           <p>
-            Three layers. Clubs are rated from match results. People are rated per 90 against
-            opponent Elo. Honours are a separate record — they do not feed the ranking.
+            Clubs from results. People from role-native per 90, then a within-role Elo.
+            Publish Performance Elo and Elo + honours. See RATING_MODEL.md.
           </p>
         </div>
       </div>
@@ -316,17 +322,17 @@ export default function PointSettings() {
         <article>
           <span>1 · Quality</span>
           <strong>Club / nation Elo</strong>
-          <p>Wins, draws, losses. Continental games connect leagues. This is how a NPFL goal and a Premier League goal become comparable.</p>
+          <p>Wins, draws, losses, kickoff order. Cups and promotion connect PL and the Championship. NPFL needs transfer priors — the graph alone does not.</p>
         </article>
         <article>
           <span>2 · Performance</span>
           <strong>Per 90 × opponent</strong>
-          <p>Actions, not medals. Minutes are the denominator. Position weights apply only to minutes in that role.</p>
+          <p>Attack is Q-scaled. Defence is possession-adjusted, not Q-scaled. Then z within ST / AM / CM / DM / CB / … so a centre-back is not punished for not scoring.</p>
         </article>
         <article>
           <span>3 · Honours</span>
           <strong>Votes and trophies</strong>
-          <p>Shown beside the ranking. Team medals are scaled by minutes share so a 12-minute substitute is not a starter.</p>
+          <p>Cabinet plus an optional Elo + honours column. Individual awards only in the blend, capped, small λ when stats are rich.</p>
         </article>
       </div>
 
@@ -436,10 +442,9 @@ export default function PointSettings() {
           <article className="panel">
             <h2>Results Elo</h2>
             <p className="muted">
-              No division multipliers. A Championship season is not ×3 and NPFL is not ×6.
-              After results, mean club Elo is the league strength. Players inherit that
-              through the opponents they faced (and through cups, promotion, and continental
-              games that connect the graph). National teams use the same engine.
+              No typed ×6/×3. S and Q caps are placeholders until transfer invariance is
+              fitted. Goal difference is on. Cups use 0.75K. Friendlies 0.5K. Neutral venues
+              get H = 0. Nations use this engine on a separate graph.
             </p>
             <div className="metric-grid">
               {ENGINE_FIELDS.map((field) => (
@@ -447,13 +452,24 @@ export default function PointSettings() {
                   <WeightInput
                     label={field.label}
                     value={config.engine[field.id]}
-                    step={field.id === 'eraReferenceGpg' ? '0.05' : '1'}
+                    step={['honoursBlend', 'qualityCap'].includes(field.id) ? '0.05' : '1'}
                     onChange={(raw) => updateEngine(field.id, raw)}
                   />
                   <p className="muted">{field.hint}</p>
                 </div>
               ))}
             </div>
+            <label className="engine-check">
+              <input
+                type="checkbox"
+                checked={config.engine.useGoalDifference !== false}
+                onChange={(event) => setConfig((current) => ({
+                  ...current,
+                  engine: { ...current.engine, useGoalDifference: event.target.checked }
+                }))}
+              />
+              Goal-difference multiplier on club/nation updates
+            </label>
             <label className="engine-check">
               <input
                 type="checkbox"
@@ -467,6 +483,17 @@ export default function PointSettings() {
             </label>
           </article>
         ) : null}
+
+        <article className="panel">
+          <h2>Formula</h2>
+          <p className="muted">
+            Club/nation: Elo with K, home H, competition K, optional GD. Player: attack × Q
+            (capped), defence × 0.5 / opponent possession, cards unscaled, then
+            R = 1500 + 200 z × M / (M + M₀) inside the role. Keepers split PSxG vs no-PSxG.
+            Coaches: Δ vs frozen schedule plus level from frozen club Elo. Full spec:
+            RATING_MODEL.md.
+          </p>
+        </article>
 
         <ObjectivityPreview tab={tab} config={config} />
 

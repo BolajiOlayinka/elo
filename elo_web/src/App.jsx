@@ -5,8 +5,14 @@ import { ArrowUpRight } from './components/Icons.jsx';
 import { HomeHeroCard } from './components/HomeHeroCard.jsx';
 import { TrendingComparisons } from './components/TrendingComparisons.jsx';
 import { SiteFooter } from './components/SiteFooter.jsx';
+import { AuthProvider } from './auth.jsx';
 import { SiteNav } from './components/SiteNav.jsx';
+import { LanguageProvider, useLanguage } from './i18n/LanguageProvider.jsx';
+import AnalysisDetailPage from './pages/AnalysisDetailPage.jsx';
+import AnalysisPage from './pages/AnalysisPage.jsx';
 import ComparePage from './pages/ComparePage.jsx';
+import AccountPage from './pages/AccountPage.jsx';
+import DebateIndexPage from './pages/DebateIndexPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import RatingsPage from './pages/RatingsPage.jsx';
 import './App.css';
@@ -19,42 +25,32 @@ import './App.css';
 // const messiSrc = Object.values(messiPhotos)[0] || null;
 
 const ENTITIES = [
-  { id: 'players', label: 'Players' },
-  { id: 'coaches', label: 'Coaches / Managers' },
-  { id: 'clubs', label: 'Clubs' },
-  { id: 'teams', label: 'National Teams' },
-  { id: 'leagues', label: 'Leagues' }
+  { id: 'players' },
+  { id: 'coaches' },
+  { id: 'clubs' },
+  { id: 'teams' },
+  { id: 'leagues' }
 ];
 
 const LENSES = ['Career', 'Elite', 'Peak', 'Era'];
 
-const FAQS = [
-  {
-    question: 'Do Career Points ever go down?',
-    answer:
-      'No. Cumulative Career Points reward lifetime achievement and consistency; they do not decay with form. Season Points are separate and reset to zero each year.'
-  },
-  {
-    question: 'How can players from different eras be compared?',
-    answer:
-      'Era Normalization scores a season against its own peer distribution, so dominance is compared in context rather than raw totals.'
-  },
-  {
-    question: 'Is normalized peak the same as Career Points?',
-    answer:
-      'No. Career Points accumulate a lifetime record. Normalized peak is a z-score of the best season against contemporaries.'
-  },
-  {
-    question: 'What does “grounded” AI actually mean?',
-    answer:
-      'The Analyst answers from the ratings record you can see on the page, not from unsourced opinion.'
-  },
-  {
-    question: 'Are ratings on this page official?',
-    answer:
-      'No. These are independent model outputs. They are not affiliated with any club or league.'
-  }
-];
+const FAQS = ['faq1', 'faq2', 'faq3', 'faq4', 'faq5'];
+
+const STORY_STAT_KEYS = {
+  'Career Points': 'home.statCareer',
+  'Best season': 'home.statBest',
+  'Normalized peak': 'home.statPeak',
+  'Elite seasons': 'home.statElite'
+};
+
+const STORY_NOTE_KEYS = {
+  'Cumulative legacy': 'home.noteLegacy',
+  '2011/12 Season Points': 'home.noteSeason',
+  'Relative to era peers': 'home.notePeers',
+  'Lifetime total': 'home.noteLifetime',
+  'Above the 90th percentile': 'home.noteElite',
+  '2012/13 Season Points': 'home.noteSeason1213'
+};
 
 const STORIES = {
   players: {
@@ -420,6 +416,7 @@ function CheckMark() {
 }
 
 function StorySection() {
+  const { t } = useLanguage();
   const [entity, setEntity] = useState('players');
   const [lens, setLens] = useState('Career');
   const profile = STORIES[entity];
@@ -429,9 +426,9 @@ function StorySection() {
   return (
     <section className="story" id="ratings">
       <div className="wrap">
-        <h2 className="story-title">Every career has a story.</h2>
+        <h2 className="story-title">{t('home.storyTitle')}</h2>
 
-        <div className="story-tabs" role="tablist" aria-label="Entity type">
+        <div className="story-tabs" role="tablist" aria-label={t('ratings.entity')}>
           {ENTITIES.map((item) => (
             <button
               key={item.id}
@@ -441,7 +438,7 @@ function StorySection() {
               className={entity === item.id ? 'is-active' : ''}
               onClick={() => setEntity(item.id)}
             >
-              {item.label}
+              {t(`home.entity.${item.id}`)}
             </button>
           ))}
         </div>
@@ -451,14 +448,14 @@ function StorySection() {
             <div className="story-identity">
               <div>
                 <h3>{profile.name}</h3>
-                <p>Country · {profile.role} · Modern era</p>
+                <p>{t('home.storyMeta', { role: t(`home.role.${profile.role}`, profile.role) })}</p>
               </div>
               <strong>
                 {profile.initials} <span>/</span> {profile.rank}
               </strong>
             </div>
 
-            <div className="story-lenses" role="tablist" aria-label="Rating lens">
+            <div className="story-lenses" role="tablist" aria-label={t('home.storyTitle')}>
               {LENSES.map((item) => (
                 <button
                   key={item}
@@ -468,7 +465,7 @@ function StorySection() {
                   className={lens === item ? 'is-active' : ''}
                   onClick={() => setLens(item)}
                 >
-                  {item}
+                  {t(`home.lens.${item}`)}
                 </button>
               ))}
             </div>
@@ -476,9 +473,9 @@ function StorySection() {
             <div className="story-stats">
               {view.stats.map((stat) => (
                 <div key={stat.label}>
-                  <span>{stat.label}</span>
+                  <span>{t(STORY_STAT_KEYS[stat.label], stat.label)}</span>
                   <strong>{stat.value}</strong>
-                  <em>{stat.note}</em>
+                  <em>{t(STORY_NOTE_KEYS[stat.note], stat.note)}</em>
                 </div>
               ))}
             </div>
@@ -489,30 +486,27 @@ function StorySection() {
               years={view.years}
               peak={view.peak}
               scale={view.chartScale}
-              title={view.chartTitle}
+              title={t('home.chartTitle')}
             />
             <p className="story-footnote">
-              Illustrative demo data · Hero badges and season history are examples.
+              {t('home.storyFootnote')}
             </p>
           </article>
 
           <aside className="story-aside">
-            <h3>Not a snapshot. A living football record.</h3>
-            <p>
-              Follow the arc from breakthrough to best season. Keep career
-              achievement, peak form, and context in the same view.
-            </p>
+            <h3>{t('home.storyAsideTitle')}</h3>
+            <p>{t('home.storyAsideBody')}</p>
             <ul>
-              <li><CheckMark /> Distinct lenses for every role</li>
-              <li><CheckMark /> Season history with visible peaks</li>
-              <li><CheckMark /> Shared context across the graph</li>
+              <li><CheckMark /> {t('home.storyBullet1')}</li>
+              <li><CheckMark /> {t('home.storyBullet2')}</li>
+              <li><CheckMark /> {t('home.storyBullet3')}</li>
             </ul>
             <div className="story-aside-actions">
               <Link className="btn btn-ghost btn-explore-profiles" to="/compare">
-                Compare
+                {t('home.compareCareers')}
               </Link>
               <Link className="btn btn-ghost btn-explore-profiles" to="/ratings">
-                Explore Profiles
+                {t('home.exploreProfiles')}
                 <ArrowUpRight size={14} />
               </Link>
             </div>
@@ -522,13 +516,13 @@ function StorySection() {
 
       <div className="compare">
         <div className="wrap">
-          <h2>Trending Comparisons</h2>
-          <p className="compare-sub">Let the points decide. Explore the comparisons everyone is talking about.</p>
+          <h2>{t('home.trending')}</h2>
+          <p className="compare-sub">{t('home.trendingSub')}</p>
         </div>
         <TrendingComparisons />
         <div className="wrap trend-after">
           <a className="btn btn-lime btn-explore" href="#method">
-            See how it works
+            {t('home.seeHow')}
             <ArrowUpRight size={10} />
           </a>
         </div>
@@ -538,31 +532,33 @@ function StorySection() {
 }
 
 function ClosingSection() {
+  const { t } = useLanguage();
+
   return (
     <section className="closing" id="faq">
       <div className="wrap">
         <div className="faq">
           <div className="faq-intro">
-            <h2>Before you dive in.</h2>
-            <p>A little clarity on what the engine measures—and what it doesn&apos;t.</p>
+            <h2>{t('home.faqTitle')}</h2>
+            <p>{t('home.faqLede')}</p>
           </div>
           <FaqList />
         </div>
 
         <div className="cta" id="analyst">
           <img className="cta-ellipse" src={ellipseSrc} alt="" />
-          <p className="cta-eyebrow">Less guesswork. More football.</p>
-          <h2>Bringing a better lens to the beautiful game.</h2>
-          <p className="cta-lede">Explore the records. Compare the eras. Ask the next question.</p>
+          <p className="cta-eyebrow">{t('home.ctaEyebrow')}</p>
+          <h2>{t('home.ctaTitle')}</h2>
+          <p className="cta-lede">{t('home.ctaLede')}</p>
           <div className="cta-actions">
             <Link className="btn btn-lime btn-explore" to="/ratings">
-              Explore Ratings
+              {t('home.exploreRatings')}
               <ArrowUpRight size={10} />
             </Link>
-            <a className="btn btn-lime btn-explore" href="#analyst">
-              Try AI Analyst
+            <Link className="btn btn-lime btn-explore" to="/analysis">
+              {t('home.readAnalysis')}
               <ArrowUpRight size={10} />
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -571,6 +567,7 @@ function ClosingSection() {
 }
 
 function FaqList() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(0);
 
   return (
@@ -579,12 +576,12 @@ function FaqList() {
         const isOpen = open === index;
 
         return (
-          <article key={item.question} className={isOpen ? 'is-open' : ''}>
+          <article key={item} className={isOpen ? 'is-open' : ''}>
             <button type="button" onClick={() => setOpen(isOpen ? -1 : index)}>
-              <span>{item.question}</span>
+              <span>{t(`home.${item}q`)}</span>
               <em aria-hidden="true">{isOpen ? '–' : '+'}</em>
             </button>
-            {isOpen ? <p>{item.answer}</p> : null}
+            {isOpen ? <p>{t(`home.${item}a`)}</p> : null}
           </article>
         );
       })}
@@ -593,30 +590,27 @@ function FaqList() {
 }
 
 function LandingPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="page">
       <div className="wrap">
-      <SiteNav />
-
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Football, beyond the scoreline.</p>
-          <h1>The Universal Football Rating Engine</h1>
-          <p className="lede">
-            Compare careers, peak seasons, and eras with Career Points, Era
-            Normalization, and a grounded AI Analyst.
-          </p>
+          <p className="eyebrow">{t('home.eyebrow')}</p>
+          <h1>{t('home.title')}</h1>
+          <p className="lede">{t('home.lede')}</p>
           <div className="hero-actions">
             <Link className="btn btn-lime btn-explore" to="/ratings">
-              Explore Ratings
+              {t('home.exploreRatings')}
               <ArrowUpRight size={10} />
             </Link>
-            <a className="btn btn-lime btn-explore" href="#analyst">
-              Launch AI Analyst
+            <Link className="btn btn-lime btn-explore" to="/analysis">
+              {t('home.readAnalysis')}
               <ArrowUpRight size={10} />
-            </a>
+            </Link>
           </div>
-          <p className="fineprint">One persistent record. Different eras. More meaningful debate.</p>
+          <p className="fineprint">{t('home.fineprint')}</p>
         </div>
 
         <div className="hero-media">
@@ -664,9 +658,9 @@ function LandingPage() {
       </section>
 
       <ul className="proof">
-        <li>A lasting record of achievement</li>
-        <li>Peak performance, not just longevity</li>
-        <li>Context before conclusions</li>
+        <li>{t('home.proof1')}</li>
+        <li>{t('home.proof2')}</li>
+        <li>{t('home.proof3')}</li>
       </ul>
 
       </div>
@@ -675,62 +669,62 @@ function LandingPage() {
         <div className="wrap stats-inner">
           <div>
             <strong>50+</strong>
-            <span>Major leagues tracked</span>
+            <span>{t('home.statLeagues')}</span>
           </div>
           <div>
             <strong>100,000+</strong>
-            <span>Matches normalized</span>
+            <span>{t('home.statMatches')}</span>
           </div>
           <div>
             <strong>12,000+</strong>
-            <span>Player profiles built</span>
+            <span>{t('home.statPlayers')}</span>
           </div>
           <div>
-            <strong>100 years</strong>
-            <span>Historical depth</span>
+            <strong>{t('home.statYearsValue')}</strong>
+            <span>{t('home.statYears')}</span>
           </div>
         </div>
       </section>
 
       <section className="features wrap" id="method">
         <div className="features-heading">
-          <h2>Greatness is more than one number.</h2>
+          <h2>{t('home.featuresTitle')}</h2>
           <p className="features-lede">
-            Separate the body of work from the moment of brilliance. Then put both in context.
+            {t('home.featuresLede')}
           </p>
         </div>
         <div className="feature-grid">
           <article>
             <div className="feature-top">
-              <span>The long view</span>
-              <span className="feature-tag">Career</span>
+              <span>{t('home.feat1kicker')}</span>
+              <span className="feature-tag">{t('home.feat1tag')}</span>
             </div>
-            <h3>Cumulative Career Points</h3>
-            <p>A cumulative legacy score that never decreases. Rewards lifetime achievement and consistency.</p>
+            <h3>{t('home.feat1title')}</h3>
+            <p>{t('home.feat1body')}</p>
             <p className="feature-value">14,250</p>
-            <p className="chart-caption">Career Points · Player&apos;s name</p>
+            <p className="chart-caption">{t('home.feat1caption')}</p>
             <Sparkline points={[18, 22, 28, 34, 42, 52, 64, 78]} />
           </article>
           <article>
             <div className="feature-top">
-              <span>The high watermark</span>
-              <span className="feature-tag">Peak</span>
+              <span>{t('home.feat2kicker')}</span>
+              <span className="feature-tag">{t('home.feat2tag')}</span>
             </div>
-            <h3>Season Points &amp; Peak Score</h3>
-            <p>A season-bounded rating resetting to zero each year. Evaluates true peak performance.</p>
+            <h3>{t('home.feat2title')}</h3>
+            <p>{t('home.feat2body')}</p>
             <p className="feature-value">980</p>
-            <p className="chart-caption">Best season · 2011/12</p>
+            <p className="chart-caption">{t('home.feat2caption')}</p>
             <Sparkline points={[28, 32, 36, 70, 54, 48, 52, 40]} />
           </article>
           <article>
             <div className="feature-top">
-              <span>The level playing field</span>
-              <span className="feature-tag">Era</span>
+              <span>{t('home.feat3kicker')}</span>
+              <span className="feature-tag">{t('home.feat3tag')}</span>
             </div>
-            <h3>Era &amp; Context Normalization</h3>
-            <p>Standardized z-score comparing dominance against peer distributions, era rules, and league strength.</p>
+            <h3>{t('home.feat3title')}</h3>
+            <p>{t('home.feat3body')}</p>
             <p className="feature-value">+3.42 σ</p>
-            <p className="chart-caption">Normalized peak · Player&apos;s name</p>
+            <p className="chart-caption">{t('home.feat3caption')}</p>
             <Sparkline points={[24, 30, 28, 46, 72, 66, 42, 30]} />
           </article>
         </div>
@@ -745,11 +739,24 @@ function LandingPage() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/ratings" element={<RatingsPage />} />
-      <Route path="/profile/:type/:id" element={<ProfilePage />} />
-      <Route path="/compare" element={<ComparePage />} />
-    </Routes>
+    <LanguageProvider>
+    <AuthProvider>
+      <div className="site-nav-bar">
+        <div className="wrap">
+          <SiteNav />
+        </div>
+      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/ratings" element={<RatingsPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/profile/:type/:id" element={<ProfilePage />} />
+        <Route path="/compare" element={<ComparePage />} />
+        <Route path="/analysis" element={<AnalysisPage />} />
+        <Route path="/analysis/debate" element={<DebateIndexPage />} />
+        <Route path="/analysis/:slug" element={<AnalysisDetailPage />} />
+      </Routes>
+    </AuthProvider>
+    </LanguageProvider>
   );
 }

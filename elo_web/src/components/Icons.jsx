@@ -77,6 +77,44 @@ export function StarIcon() {
   );
 }
 
+export function CalendarIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <rect x="2.5" y="3.5" width="11" height="10" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M2.5 6.5h11M5.2 2.4v2.4M10.8 2.4v2.4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function LogoutIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M6.2 3.2H3.8A1.3 1.3 0 0 0 2.5 4.5v7a1.3 1.3 0 0 0 1.3 1.3h2.4M10.2 11.2 13.5 8 10.2 4.8M13.5 8H6.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function FilterIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M2.5 3.5h11L10 8.2v4.1L6 13.5V8.2L2.5 3.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ShareIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -84,6 +122,92 @@ export function ShareIcon() {
       <circle cx="4" cy="8" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
       <circle cx="12" cy="12.5" r="1.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
       <path d="M5.4 7.2 10.4 4.4M5.4 8.8 10.4 11.6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function ChatIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M3 3.5h10a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 13 11.5H8.2L5 13.6V11.5H3A1.5 1.5 0 0 1 1.5 10V5A1.5 1.5 0 0 1 3 3.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function PaperclipIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M6.2 8.6 9.8 5a2 2 0 1 1 2.8 2.8l-4.7 4.7a3.1 3.1 0 0 1-4.4-4.4l4.3-4.3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function SendUpIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 12.5V3.8M5 6.4 8 3.5l3 2.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ThumbUpIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M5.5 7.2 7.4 3.4A1.4 1.4 0 0 1 9.7 4.2L9.2 7.2H13a1.5 1.5 0 0 1 1.5 1.8l-.8 3.2A1.8 1.8 0 0 1 11.9 13.5H5.5V7.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <path d="M3 7.2h2.5V13.5H3.6A.6.6 0 0 1 3 12.9V7.2Z" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+export function ThumbDownIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M10.5 8.8 8.6 12.6A1.4 1.4 0 0 1 6.3 11.8L6.8 8.8H3A1.5 1.5 0 0 1 1.5 7l.8-3.2A1.8 1.8 0 0 1 4.1 2.5h6.4V8.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <path d="M13 8.8h-2.5V2.5h1.9a.6.6 0 0 1 .6.6v5.7Z" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+export function ArrowDownIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 3.5v8.7M5 9.6 8 12.5l3-2.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

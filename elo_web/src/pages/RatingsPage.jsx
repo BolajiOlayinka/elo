@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { CompareIcon, EyeIcon, StarIcon } from '../components/Icons.jsx';
 import { Avatar, Flag } from '../components/EntityMarks.jsx';
 import { RatingsHero } from '../components/RatingsHero.jsx';
-import { SiteNav } from '../components/SiteNav.jsx';
 import { getRankings, PAGE_SIZE, RATING_TABS } from '../data/rankings.js';
 import { SiteFooter } from '../components/SiteFooter.jsx';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 export default function RatingsPage() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState('players');
   const [page, setPage] = useState(1);
   const rows = getRankings(tab);
@@ -16,17 +17,13 @@ export default function RatingsPage() {
 
   return (
     <div className="page ratings-page">
-      <div className="wrap">
-        <SiteNav />
-      </div>
-
       <RatingsHero />
 
       <div className="page-divider" />
 
       <section className="ratings-board">
         <div className="wrap">
-          <div className="ratings-tabs story-lenses" role="tablist" aria-label="Ranking entity">
+          <div className="ratings-tabs story-lenses" role="tablist" aria-label={t('ratings.entity')}>
             {RATING_TABS.map((item) => (
               <button
                 key={item.id}
@@ -40,7 +37,7 @@ export default function RatingsPage() {
                 }}
               >
                 {tab === item.id ? <StarIcon /> : null}
-                {item.label}
+                {t(`ratings.tab.${item.id}`, item.label)}
               </button>
             ))}
           </div>
@@ -54,13 +51,13 @@ export default function RatingsPage() {
           <table className="ratings-table">
             <thead>
               <tr>
-                <th>Rank</th>
-                <th>Name</th>
-                <th>Country</th>
-                <th>Career Points</th>
-                <th>Peak</th>
-                <th>Era</th>
-                <th>Actions</th>
+                <th>{t('ratings.rank')}</th>
+                <th>{t('ratings.name')}</th>
+                <th>{t('ratings.country')}</th>
+                <th>{t('ratings.careerPoints')}</th>
+                <th>{t('ratings.peak')}</th>
+                <th>{t('ratings.era')}</th>
+                <th>{t('ratings.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -86,11 +83,11 @@ export default function RatingsPage() {
                     <div className="ratings-actions">
                       <Link className="table-btn" to={`/profile/${row.type}/${row.id}`}>
                         <EyeIcon />
-                        View
+                        {t('ratings.view')}
                       </Link>
                       <Link className="table-btn" to={`/compare?type=${row.type}&id=${row.id}`}>
                         <CompareIcon />
-                        Compare
+                        {t('ratings.compare')}
                       </Link>
                     </div>
                   </td>
@@ -101,7 +98,7 @@ export default function RatingsPage() {
 
           <div className="pagination">
             <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>
-              Previous
+              {t('common.previous')}
             </button>
             {Array.from({ length: pageCount }, (_, index) => (
               <button
@@ -114,7 +111,7 @@ export default function RatingsPage() {
               </button>
             ))}
             <button type="button" disabled={page === pageCount} onClick={() => setPage(page + 1)}>
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>

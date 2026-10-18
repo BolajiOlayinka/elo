@@ -38,6 +38,10 @@ Vite serves the SPA. Routes:
 | `/ratings` | Rankings |
 | `/profile/:type/:id` | Profile |
 | `/compare` | Side-by-side compare |
+| `/analysis` | Analysis essays |
+| `/analysis/debate` | Debate index |
+| `/account` | Logged-in analyst profile |
+| `/analysis/:slug` | Analysis detail |
 
 ## Local API / monolith
 
@@ -96,9 +100,21 @@ npm run ingest:load:season
 npm run ingest:load:all                 # local
 npm run ingest:load:all:live            # DATABASE_URL + S3
 
+# Trophies (one /trophies call per player or coach already on disk)
+npm run ingest:download:trophies:smoke
+npm run ingest:download:trophies
+npm run ingest:load:trophies            # local; players/coaches must be loaded first
+npm run ingest:load:trophies:live
+
 # Career-era context (1980–2008), separate from API-Football
 npm run ingest:wikidata:smoke
 npm run ingest:wikidata:download
+npm run ingest:wikidata:honours:smoke   # P166/P2522 for Qids already on disk
+npm run ingest:wikidata:honours
+
+# StatsBomb open data (GitHub, no key). Credit StatsBomb if you publish analysis.
+npm run ingest:statsbomb:smoke
+npm run ingest:statsbomb:download
 ```
 
 `ingest:load:all:live` refuses a partial download unless you pass `--allow-partial`. Do not use `--allow-partial` unless you mean to load a subset.
@@ -130,6 +146,10 @@ web: node elo_backend/src/index.js
 Set `DATABASE_URL`, `REDIS_URL`, and the same secrets as local. The slug ignores `elo_backend/data`.
 
 If GitHub auto-deploy is wired to this repo, `elo_backend` must be a normal folder, not a nested git repository. A nested `.git` inside `elo_backend` will ship as a gitlink and the dyno will not contain backend source. Flatten that, or deploy with `heroku builds:create --dir .` from this root after `heroku login`.
+
+## Rating model
+
+The club, nation, league, player, keeper, and coach formulas (for external critique) are in [RATING_MODEL.md](RATING_MODEL.md).
 
 ## Data sources
 

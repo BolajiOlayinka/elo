@@ -70,8 +70,33 @@ SELECT ?person ?kind ?team ?teamLabel ?start ?end ?apps ?goals WHERE {
 `.trim();
 }
 
+function honoursQuery(qids) {
+    return `
+SELECT ?person ?kind ?honour ?honourLabel ?when ?of ?ofLabel WHERE {
+  VALUES ?person { ${valuesClause(qids)} }
+  {
+    ?person p:P166 ?stmt .
+    ?stmt ps:P166 ?honour .
+    BIND("award" AS ?kind)
+    OPTIONAL { ?stmt pq:P585 ?when }
+    OPTIONAL { ?stmt pq:P580 ?when }
+    OPTIONAL { ?stmt pq:P642 ?of }
+  } UNION {
+    ?person p:P2522 ?stmt .
+    ?stmt ps:P2522 ?honour .
+    BIND("victory" AS ?kind)
+    OPTIONAL { ?stmt pq:P585 ?when }
+    OPTIONAL { ?stmt pq:P580 ?when }
+    OPTIONAL { ?stmt pq:P642 ?of }
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+`.trim();
+}
+
 module.exports = {
     personIdQuery,
     identityQuery,
-    stintQuery
+    stintQuery,
+    honoursQuery
 };

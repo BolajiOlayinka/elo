@@ -13,6 +13,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1340,
     goalsPerGame: 2.55,
     minutesShare: 0.86,
+    opponentPossession: 0.48,
+    teamTotals: { npGoals: 52, assists: 38, keyPasses: 310 },
     stats: {
       npGoals: 28,
       penalties: 2,
@@ -21,13 +23,13 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 8,
       interceptions: 4,
       blocks: 2,
-      aerialsWon: 22,
+      duelsWon: 22,
       yellow: 3,
       red: 0,
       passes: 420
     },
     honours: {},
-    note: 'Volume scorer in a weaker league'
+    note: 'Volume scorer. 1340 is a transfer-prior illustration; the NPFL graph alone would sit near 1500.'
   },
   {
     id: 'callum',
@@ -38,6 +40,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1760,
     goalsPerGame: 2.72,
     minutesShare: 0.84,
+    opponentPossession: 0.46,
+    teamTotals: { npGoals: 78, assists: 62, keyPasses: 520 },
     stats: {
       npGoals: 12,
       penalties: 1,
@@ -46,7 +50,7 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 10,
       interceptions: 5,
       blocks: 1,
-      aerialsWon: 14,
+      duelsWon: 14,
       yellow: 2,
       red: 0,
       passes: 380
@@ -63,6 +67,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1580,
     goalsPerGame: 2.6,
     minutesShare: 0.85,
+    opponentPossession: 0.49,
+    teamTotals: { npGoals: 64, assists: 48, keyPasses: 410 },
     stats: {
       npGoals: 18,
       penalties: 1,
@@ -71,7 +77,7 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 9,
       interceptions: 5,
       blocks: 1,
-      aerialsWon: 18,
+      duelsWon: 18,
       yellow: 3,
       red: 0,
       passes: 400
@@ -88,6 +94,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1740,
     goalsPerGame: 2.7,
     minutesShare: 0.9,
+    opponentPossession: 0.38,
+    teamTotals: { npGoals: 82, assists: 70, keyPasses: 540 },
     stats: {
       npGoals: 1,
       penalties: 0,
@@ -96,7 +104,7 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 18,
       interceptions: 22,
       blocks: 6,
-      aerialsWon: 12,
+      duelsWon: 12,
       yellow: 4,
       red: 0,
       passes: 2100
@@ -107,12 +115,14 @@ export const PREVIEW_PLAYERS = [
   {
     id: 'kdb',
     name: 'Jonas Hale',
-    role: 'Central mid · chance creator',
-    position: 'cm',
+    role: 'Attacking mid · chance creator',
+    position: 'cam',
     minutes: 2800,
     opponentElo: 1740,
     goalsPerGame: 2.7,
     minutesShare: 0.88,
+    opponentPossession: 0.42,
+    teamTotals: { npGoals: 86, assists: 74, keyPasses: 560 },
     stats: {
       npGoals: 4,
       penalties: 0,
@@ -121,7 +131,7 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 14,
       interceptions: 8,
       blocks: 2,
-      aerialsWon: 6,
+      duelsWon: 6,
       yellow: 3,
       red: 0,
       passes: 980
@@ -138,6 +148,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1810,
     goalsPerGame: 2.8,
     minutesShare: 0.13,
+    opponentPossession: 0.4,
+    teamTotals: { npGoals: 90, assists: 72, keyPasses: 580 },
     stats: {
       npGoals: 1,
       penalties: 0,
@@ -146,7 +158,7 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 1,
       interceptions: 0,
       blocks: 0,
-      aerialsWon: 3,
+      duelsWon: 3,
       yellow: 0,
       red: 0,
       passes: 40
@@ -163,6 +175,8 @@ export const PREVIEW_PLAYERS = [
     opponentElo: 1700,
     goalsPerGame: 2.65,
     minutesShare: 0.94,
+    opponentPossession: 0.51,
+    teamTotals: { npGoals: 58, assists: 44, keyPasses: 390 },
     stats: {
       npGoals: 9,
       penalties: 0,
@@ -171,21 +185,78 @@ export const PREVIEW_PLAYERS = [
       tacklesWon: 16,
       interceptions: 7,
       blocks: 2,
-      aerialsWon: 28,
+      duelsWon: 28,
       yellow: 4,
       red: 0,
       passes: 510
     },
     honours: {},
     note: 'Starter all year, no trophy'
+  },
+  {
+    id: 'saliba',
+    name: 'Ilya Moreau',
+    role: 'Centre back · possession side',
+    position: 'cb',
+    minutes: 3000,
+    opponentElo: 1760,
+    goalsPerGame: 2.7,
+    minutesShare: 0.92,
+    opponentPossession: 0.38,
+    teamTotals: { npGoals: 78, assists: 62, keyPasses: 520 },
+    stats: {
+      npGoals: 2,
+      penalties: 0,
+      assists: 1,
+      keyPasses: 4,
+      tacklesWon: 28,
+      interceptions: 22,
+      blocks: 18,
+      duelsWon: 125,
+      yellow: 3,
+      red: 0,
+      passes: 2100
+    },
+    honours: {},
+    note: 'Few tackles because the team has the ball'
+  },
+  {
+    id: 'relegation-cb',
+    name: 'Darren Cole',
+    role: 'Centre back · relegation side',
+    position: 'cb',
+    minutes: 3000,
+    opponentElo: 1760,
+    goalsPerGame: 2.7,
+    minutesShare: 0.93,
+    opponentPossession: 0.62,
+    teamTotals: { npGoals: 36, assists: 28, keyPasses: 240 },
+    stats: {
+      npGoals: 1,
+      penalties: 0,
+      assists: 0,
+      keyPasses: 2,
+      tacklesWon: 52,
+      interceptions: 40,
+      blocks: 24,
+      duelsWon: 110,
+      yellow: 8,
+      red: 1,
+      passes: 980
+    },
+    honours: {},
+    note: 'Volume defending; possession-adjusted, not Q-scaled'
   }
 ];
 
 export const PREVIEW_KEEPERS = [
   {
     id: 'busy',
+    entity: 'keeper',
+    hasPsxg: true,
     name: 'Chidi Nwosu',
-    role: 'Keeper · weak defence',
+    role: 'Keeper · weak defence (PSxG)',
+    position: 'gk',
     minutes: 3200,
     opponentElo: 1320,
     goalsPerGame: 2.5,
@@ -204,8 +275,11 @@ export const PREVIEW_KEEPERS = [
   },
   {
     id: 'quiet',
+    entity: 'keeper',
+    hasPsxg: true,
     name: 'Erik Holm',
-    role: 'Keeper · strong defence',
+    role: 'Keeper · strong defence (PSxG)',
+    position: 'gk',
     minutes: 3200,
     opponentElo: 1780,
     goalsPerGame: 2.7,
@@ -221,6 +295,27 @@ export const PREVIEW_KEEPERS = [
     },
     honours: { goldenGlove: 1 },
     note: 'Fewer saves, stops more than expected'
+  },
+  {
+    id: 'nopx',
+    entity: 'keeper',
+    hasPsxg: false,
+    name: 'Kwame Boateng',
+    role: 'Keeper · no PSxG coverage',
+    position: 'gk',
+    minutes: 3060,
+    opponentElo: 1500,
+    goalsPerGame: 2.4,
+    minutesShare: 0.95,
+    stats: {
+      penaltiesSaved: 3,
+      cleanSheets: 11,
+      yellow: 0,
+      red: 0,
+      saves: 96
+    },
+    honours: {},
+    note: 'Basic stratum: pens and clean sheets only. Not in the PSxG z-board.'
   }
 ];
 
@@ -231,10 +326,9 @@ export const PREVIEW_COACHES = [
     role: 'Coach · inherited 1910 squad',
     actualPoints: 86,
     expectedPoints: 82,
-    yellow: 4,
-    red: 0,
+    frozenClubElo: 1910,
     honours: { premierLeague: 1, fifaBestCoach: 1 },
-    note: 'Won the league by sitting on a super-team'
+    note: 'Holds a super-team. Level counts; Δ is small.'
   },
   {
     id: 'over',
@@ -242,10 +336,9 @@ export const PREVIEW_COACHES = [
     role: 'Coach · inherited 1610 squad',
     actualPoints: 72,
     expectedPoints: 48,
-    yellow: 6,
-    red: 1,
+    frozenClubElo: 1610,
     honours: {},
-    note: 'No trophy; huge points over expected'
+    note: 'No trophy; large Δ over a frozen 1610 baseline'
   }
 ];
 
@@ -263,29 +356,29 @@ export const CLUB_LEAGUES = {
  * intercontinental (PL–NPFL). Division number is not an input.
  */
 export const PREVIEW_MATCHES = [
-  { home: 'Arsenal', away: 'Burnley', homeGoals: 3, awayGoals: 0 },
-  { home: 'Burnley', away: 'Arsenal', homeGoals: 0, awayGoals: 2 },
-  { home: 'Arsenal', away: 'Burnley', homeGoals: 2, awayGoals: 1 },
-  { home: 'Burnley', away: 'Arsenal', homeGoals: 1, awayGoals: 1 },
-  { home: 'Arsenal', away: 'Burnley', homeGoals: 4, awayGoals: 0 },
-  { home: 'Leeds', away: 'Sheffield United', homeGoals: 2, awayGoals: 0 },
-  { home: 'Sheffield United', away: 'Leeds', homeGoals: 1, awayGoals: 1 },
-  { home: 'Leeds', away: 'Sheffield United', homeGoals: 1, awayGoals: 0 },
-  { home: 'Sheffield United', away: 'Leeds', homeGoals: 0, awayGoals: 2 },
-  { home: 'Leeds', away: 'Burnley', homeGoals: 1, awayGoals: 1 },
-  { home: 'Burnley', away: 'Leeds', homeGoals: 2, awayGoals: 0 },
-  { home: 'Arsenal', away: 'Leeds', homeGoals: 2, awayGoals: 0 },
-  { home: 'Enyimba', away: 'Remo Stars', homeGoals: 2, awayGoals: 1 },
-  { home: 'Remo Stars', away: 'Enyimba', homeGoals: 1, awayGoals: 1 },
-  { home: 'Enyimba', away: 'Remo Stars', homeGoals: 1, awayGoals: 0 },
-  { home: 'Remo Stars', away: 'Enyimba', homeGoals: 2, awayGoals: 2 },
-  { home: 'Enyimba', away: 'Remo Stars', homeGoals: 3, awayGoals: 1 },
-  { home: 'Enyimba', away: 'Burnley', homeGoals: 0, awayGoals: 2 },
-  { home: 'Burnley', away: 'Enyimba', homeGoals: 1, awayGoals: 0 },
-  { home: 'Arsenal', away: 'Enyimba', homeGoals: 3, awayGoals: 0 },
-  { home: 'Enyimba', away: 'Arsenal', homeGoals: 0, awayGoals: 2 },
-  { home: 'Burnley', away: 'Remo Stars', homeGoals: 2, awayGoals: 0 },
-  { home: 'Remo Stars', away: 'Burnley', homeGoals: 0, awayGoals: 1 }
+  { kickoff: '2024-08-10', competition: 'league', home: 'Arsenal', away: 'Burnley', homeGoals: 3, awayGoals: 0 },
+  { kickoff: '2024-08-17', competition: 'league', home: 'Burnley', away: 'Arsenal', homeGoals: 0, awayGoals: 2 },
+  { kickoff: '2024-08-24', competition: 'league', home: 'Arsenal', away: 'Burnley', homeGoals: 2, awayGoals: 1 },
+  { kickoff: '2024-08-31', competition: 'league', home: 'Burnley', away: 'Arsenal', homeGoals: 1, awayGoals: 1 },
+  { kickoff: '2024-09-07', competition: 'league', home: 'Arsenal', away: 'Burnley', homeGoals: 4, awayGoals: 0 },
+  { kickoff: '2024-09-14', competition: 'league', home: 'Leeds', away: 'Sheffield United', homeGoals: 2, awayGoals: 0 },
+  { kickoff: '2024-09-21', competition: 'league', home: 'Sheffield United', away: 'Leeds', homeGoals: 1, awayGoals: 1 },
+  { kickoff: '2024-09-28', competition: 'league', home: 'Leeds', away: 'Sheffield United', homeGoals: 1, awayGoals: 0 },
+  { kickoff: '2024-10-05', competition: 'league', home: 'Sheffield United', away: 'Leeds', homeGoals: 0, awayGoals: 2 },
+  { kickoff: '2025-01-12', competition: 'cup', home: 'Leeds', away: 'Burnley', homeGoals: 1, awayGoals: 1 },
+  { kickoff: '2025-01-19', competition: 'cup', home: 'Burnley', away: 'Leeds', homeGoals: 2, awayGoals: 0 },
+  { kickoff: '2025-02-02', competition: 'cup', home: 'Arsenal', away: 'Leeds', homeGoals: 2, awayGoals: 0 },
+  { kickoff: '2024-09-15', competition: 'league', home: 'Enyimba', away: 'Remo Stars', homeGoals: 2, awayGoals: 1 },
+  { kickoff: '2024-09-22', competition: 'league', home: 'Remo Stars', away: 'Enyimba', homeGoals: 1, awayGoals: 1 },
+  { kickoff: '2024-09-29', competition: 'league', home: 'Enyimba', away: 'Remo Stars', homeGoals: 1, awayGoals: 0 },
+  { kickoff: '2024-10-06', competition: 'league', home: 'Remo Stars', away: 'Enyimba', homeGoals: 2, awayGoals: 2 },
+  { kickoff: '2024-10-13', competition: 'league', home: 'Enyimba', away: 'Remo Stars', homeGoals: 3, awayGoals: 1 },
+  { kickoff: '2025-06-15', competition: 'continental', home: 'Enyimba', away: 'Burnley', homeGoals: 0, awayGoals: 2 },
+  { kickoff: '2025-06-22', competition: 'continental', home: 'Burnley', away: 'Enyimba', homeGoals: 1, awayGoals: 0 },
+  { kickoff: '2025-06-29', competition: 'continental', home: 'Arsenal', away: 'Enyimba', homeGoals: 3, awayGoals: 0 },
+  { kickoff: '2025-07-06', competition: 'continental', home: 'Enyimba', away: 'Arsenal', homeGoals: 0, awayGoals: 2 },
+  { kickoff: '2025-07-13', competition: 'continental', home: 'Burnley', away: 'Remo Stars', homeGoals: 2, awayGoals: 0 },
+  { kickoff: '2025-07-20', competition: 'continental', home: 'Remo Stars', away: 'Burnley', homeGoals: 0, awayGoals: 1 }
 ];
 
 export const COUNTING_WEIGHTS = {

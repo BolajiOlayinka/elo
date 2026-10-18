@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CompareIcon } from '../components/Icons.jsx';
 import { Avatar, LineChart } from '../components/EntityMarks.jsx';
-import { SiteNav } from '../components/SiteNav.jsx';
 import { getRankingItem, RATING_TABS } from '../data/rankings.js';
 import { SiteFooter } from '../components/SiteFooter.jsx';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const { type, id } = useParams();
   const [following, setFollowing] = useState(false);
   const item = getRankingItem(type, id);
@@ -15,7 +16,6 @@ export default function ProfilePage() {
   return (
     <div className="page profile-page">
       <div className="wrap">
-        <SiteNav />
         {item ? (
           <section className="dossier">
             <header className="dossier-top">
@@ -24,7 +24,7 @@ export default function ProfilePage() {
                 <h1>{item.name}</h1>
                 <p>{item.club} | {item.role} | {item.place}</p>
                 <p className="dossier-vitals">
-                  Age {item.age} · Height {item.height} · Foot {item.foot} · Active since {item.since}
+                  {t('dossier.vitals', { age: item.age, height: item.height, foot: item.foot, since: item.since })}
                 </p>
                 <div className="profile-actions">
                   <button
@@ -32,11 +32,11 @@ export default function ProfilePage() {
                     className="btn btn-ghost btn-explore"
                     onClick={() => setFollowing((value) => !value)}
                   >
-                    {following ? 'Following' : 'Follow'} {tab?.noun || 'record'}
+                    {t(following ? 'dossier.following' : 'dossier.follow', { noun: t(`dossier.noun.${tab?.noun || 'Player'}`) })}
                   </button>
                   <Link className="btn btn-lime btn-explore" to={`/compare?type=${item.type}&id=${item.id}`}>
                     <CompareIcon />
-                    Compare stats
+                    {t('dossier.compare')}
                   </Link>
                 </div>
               </div>
@@ -45,26 +45,26 @@ export default function ProfilePage() {
 
             <div className="dossier-kpis">
               <div>
-                <span>Career Points</span>
+                <span>{t('dossier.careerPoints')}</span>
                 <strong>{item.career}</strong>
-                <em>Lifetime position</em>
+                <em>{t('dossier.lifetime')}</em>
               </div>
               <div>
-                <span>Current Elo</span>
+                <span>{t('dossier.currentElo')}</span>
                 <strong>{item.elo}</strong>
-                <em>Peak {item.peakElo}</em>
+                <em>{t('dossier.peak', { value: item.peakElo })}</em>
               </div>
               <div>
-                <span>Rank</span>
+                <span>{t('dossier.rank')}</span>
                 <strong>#{item.rank}</strong>
-                <em>Leading division</em>
+                <em>{t('dossier.division')}</em>
               </div>
             </div>
 
             <div className="dossier-split">
               <article className="panel">
                 <div className="panel-head">
-                  <h2>Career timeline</h2>
+                  <h2>{t('dossier.timeline')}</h2>
                 </div>
                 <LineChart
                   series={[{ name: item.name, points: item.timeline, color: '#5B8DEF' }]}
@@ -72,7 +72,7 @@ export default function ProfilePage() {
                 />
               </article>
               <article className="panel">
-                <h2>Trophy cabinet</h2>
+                <h2>{t('dossier.cabinet')}</h2>
                 <ul className="trophy-grid">
                   {item.trophies.map((trophy) => (
                     <li key={trophy.name}>
@@ -87,18 +87,18 @@ export default function ProfilePage() {
 
             <div className="dossier-split">
               <article className="panel">
-                <h2>2023/24 Performance metrics</h2>
+                <h2>{t('dossier.perfTitle')}</h2>
                 <div className="metric-grid">
-                  <div><span>Goals</span><strong>{item.goals}</strong></div>
-                  <div><span>Assists</span><strong>{item.assists}</strong></div>
-                  <div><span>Matches</span><strong>{item.matches}</strong></div>
-                  <div><span>Dribble</span><strong>{item.dribble}</strong></div>
-                  <div><span>Red cards</span><strong>{item.red}</strong></div>
-                  <div><span>Yellow cards</span><strong>{item.yellow}</strong></div>
+                  <div><span>{t('dossier.goals')}</span><strong>{item.goals}</strong></div>
+                  <div><span>{t('dossier.assists')}</span><strong>{item.assists}</strong></div>
+                  <div><span>{t('dossier.matches')}</span><strong>{item.matches}</strong></div>
+                  <div><span>{t('dossier.dribble')}</span><strong>{item.dribble}</strong></div>
+                  <div><span>{t('dossier.red')}</span><strong>{item.red}</strong></div>
+                  <div><span>{t('dossier.yellow')}</span><strong>{item.yellow}</strong></div>
                 </div>
               </article>
               <article className="panel">
-                <h2>Individual accolades</h2>
+                <h2>{t('dossier.accolades')}</h2>
                 <ul className="accolade-list">
                   {item.accolades.map((award) => (
                     <li key={award.name}>
@@ -112,13 +112,13 @@ export default function ProfilePage() {
             </div>
 
             <article className="panel">
-              <h2>Career performance</h2>
+              <h2>{t('dossier.careerPerf')}</h2>
               <table className="ratings-table">
                 <thead>
                   <tr>
-                    <th>Season</th>
-                    <th>Club</th>
-                    <th>Competition level</th>
+                    <th>{t('dossier.season')}</th>
+                    <th>{t('dossier.club')}</th>
+                    <th>{t('dossier.level')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -135,8 +135,8 @@ export default function ProfilePage() {
           </section>
         ) : (
           <section className="profile-card">
-            <h1>Profile not found</h1>
-            <Link className="btn btn-ghost btn-explore-profiles" to="/ratings">Back to ratings</Link>
+            <h1>{t('dossier.notFound')}</h1>
+            <Link className="btn btn-ghost btn-explore-profiles" to="/ratings">{t('dossier.backRatings')}</Link>
           </section>
         )}
       </div>

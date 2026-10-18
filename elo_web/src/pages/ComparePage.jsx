@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Avatar, LineChart } from '../components/EntityMarks.jsx';
 import { ShareIcon, SwapIcon } from '../components/Icons.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
-import { SiteNav } from '../components/SiteNav.jsx';
 import { getRankingItem, getRankings } from '../data/rankings.js';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 const COLORS = ['#5B8DEF', '#BCF766', '#F3B46A'];
 
@@ -21,6 +21,7 @@ function signed(value) {
 }
 
 export default function ComparePage() {
+  const { t } = useLanguage();
   const [params] = useSearchParams();
   const type = params.get('type') || 'players';
   const rows = getRankings(type);
@@ -43,62 +44,60 @@ export default function ComparePage() {
   return (
     <div className="page compare-page">
       <div className="wrap">
-        <SiteNav />
-
         <p className="crumb">
-          <Link to={left ? `/profile/${type}/${left.id}` : '/ratings'}>Profile</Link>
-          <span> / Compare</span>
+          <Link to={left ? `/profile/${type}/${left.id}` : '/ratings'}>{t('compare.profile')}</Link>
+          <span> / {t('nav.compare')}</span>
         </p>
 
         <section className="compare-head">
           <div>
-            <h1>Player comparison</h1>
-            <p>Compare ratings, career trajectories, and season performance. Illustrative demo data.</p>
+            <h1>{t('compare.title')}</h1>
+            <p>{t('compare.lede')}</p>
           </div>
           <button type="button" className="btn btn-ghost btn-explore">
             <ShareIcon />
-            Share comparison
+            {t('compare.share')}
           </button>
         </section>
 
         <section className="compare-picker">
           <div className="picker-col">
-            <label>Selected player</label>
+            <label>{t('compare.selected')}</label>
             <select value={leftId} onChange={(event) => setLeftId(event.target.value)}>
               {rows.map((row) => (
                 <option key={row.id} value={row.id}>{row.name}</option>
               ))}
             </select>
             <div className="picker-filters">
-              <select defaultValue="all"><option value="all">All competitions</option></select>
-              <select defaultValue="career"><option value="career">Season</option></select>
+              <select defaultValue="all"><option value="all">{t('compare.allComps')}</option></select>
+              <select defaultValue="career"><option value="career">{t('compare.season')}</option></select>
             </div>
           </div>
 
           <button type="button" className="swap-btn" onClick={swap}>
             <SwapIcon />
-            Swap
+            {t('compare.swap')}
           </button>
 
           <div className="picker-col">
-            <label>Comparison player</label>
+            <label>{t('compare.other')}</label>
             <select value={rightId} onChange={(event) => setRightId(event.target.value)}>
               {rows.map((row) => (
                 <option key={row.id} value={row.id}>{row.name}</option>
               ))}
             </select>
             <div className="picker-filters">
-              <select defaultValue="all"><option value="all">All competitions</option></select>
-              <select defaultValue="career"><option value="career">Season</option></select>
+              <select defaultValue="all"><option value="all">{t('compare.allComps')}</option></select>
+              <select defaultValue="career"><option value="career">{t('compare.season')}</option></select>
             </div>
           </div>
         </section>
 
         {showExtra ? (
           <div className="picker-col extra-picker">
-            <label>Another player</label>
+            <label>{t('compare.another')}</label>
             <select value={extraId} onChange={(event) => setExtraId(event.target.value)}>
-              <option value="">Choose a player</option>
+              <option value="">{t('compare.choose')}</option>
               {rows.map((row) => (
                 <option key={row.id} value={row.id}>{row.name}</option>
               ))}
@@ -106,7 +105,7 @@ export default function ComparePage() {
           </div>
         ) : (
           <button type="button" className="btn btn-ghost add-player" onClick={() => setShowExtra(true)}>
-            Add another player
+            {t('compare.add')}
           </button>
         )}
 
@@ -116,9 +115,9 @@ export default function ComparePage() {
               <Avatar initials={item.initials} size={44} />
               <div>
                 <h3>{item.name}</h3>
-                <p>{item.club} | {item.role} | {item.place}</p>
-                <p>Age {item.age} · {item.height} · {item.foot}</p>
-                <Link to={`/profile/${item.type}/${item.id}`}>View profile</Link>
+                <p>{t('compare.meta', { club: item.club, role: item.role, place: item.place })}</p>
+                <p>{t('compare.age', { age: item.age, height: item.height, foot: item.foot })}</p>
+                <Link to={`/profile/${item.type}/${item.id}`}>{t('compare.viewProfile')}</Link>
               </div>
               <span className="dot" style={{ background: COLORS[index] }} />
             </article>
@@ -127,30 +126,30 @@ export default function ComparePage() {
 
         <article className="panel">
           <div className="panel-head">
-            <h2>Ratings at a glance</h2>
-            <span>Illustrative comparison</span>
+            <h2>{t('compare.glance')}</h2>
+            <span>{t('compare.illustrative')}</span>
           </div>
           <table className="ratings-table glance-table">
             <thead>
               <tr>
-                <th>Rating metric</th>
+                <th>{t('compare.metric')}</th>
                 {selected.map((item) => <th key={item.id}>{item.name}</th>)}
-                <th>Difference</th>
+                <th>{t('compare.diff')}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Current Elo</td>
+                <td>{t('compare.currentElo')}</td>
                 {selected.map((item) => <td key={`${item.id}-elo`}>{item.elo}</td>)}
                 <td>{signed(diff(left.eloNum, right.eloNum))}</td>
               </tr>
               <tr>
-                <td>Peak Elo</td>
+                <td>{t('compare.peakElo')}</td>
                 {selected.map((item) => <td key={`${item.id}-peak`}>{item.peakElo}</td>)}
                 <td>{signed(diff(left.peakEloNum, right.peakEloNum))}</td>
               </tr>
               <tr>
-                <td>Career Points</td>
+                <td>{t('compare.careerPoints')}</td>
                 {selected.map((item) => <td key={`${item.id}-career`}>{item.career}</td>)}
                 <td>{signed(diff(left.careerNum, right.careerNum))}</td>
               </tr>
@@ -160,7 +159,7 @@ export default function ComparePage() {
 
         <article className="panel">
           <div className="panel-head">
-            <h2>Career Elo rating</h2>
+            <h2>{t('compare.careerElo')}</h2>
           </div>
           <LineChart
             series={selected.map((item, index) => ({
@@ -174,12 +173,12 @@ export default function ComparePage() {
 
         <article className="panel">
           <div className="panel-head">
-            <h2>2023/24 Performance metrics</h2>
+            <h2>{t('compare.perfTitle')}</h2>
           </div>
           {[
-            ['Goals', 'goals'],
-            ['Assists', 'assists'],
-            ['Matches', 'matches']
+            [t('compare.goals'), 'goals'],
+            [t('compare.assists'), 'assists'],
+            [t('compare.matches'), 'matches']
           ].map(([label, key]) => (
             <div className="bar-row" key={key}>
               <strong>{left[key]}</strong>
@@ -192,10 +191,10 @@ export default function ComparePage() {
         </article>
 
         <div className="compare-foot">
-          <p>Keep exploring the comparison. Save this pairing or choose a different opponent.</p>
+          <p>{t('compare.foot')}</p>
           <div>
-            <Link className="btn btn-ghost btn-explore" to="/ratings">Change players</Link>
-            <button type="button" className="btn btn-lime btn-explore">Save comparison</button>
+            <Link className="btn btn-ghost btn-explore" to="/ratings">{t('compare.change')}</Link>
+            <button type="button" className="btn btn-lime btn-explore">{t('compare.save')}</button>
           </div>
         </div>
       </div>

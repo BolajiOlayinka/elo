@@ -10,7 +10,9 @@ function parseIngestArgs(argv) {
         verbose: false,
         allowPartial: false,
         league: null,
-        season: null
+        season: null,
+        player: null,
+        coach: null
     };
 
     for (let index = 2; index < argv.length; index += 1) {
@@ -38,6 +40,12 @@ function parseIngestArgs(argv) {
         } else if (flag === '--season') {
             args.season = Number(argv[index + 1]);
             index += 1;
+        } else if (flag === '--player') {
+            args.player = Number(argv[index + 1]);
+            index += 1;
+        } else if (flag === '--coach') {
+            args.coach = Number(argv[index + 1]);
+            index += 1;
         } else {
             throw new Error(`Unknown argument: ${flag}`);
         }
@@ -49,6 +57,14 @@ function parseIngestArgs(argv) {
 
     if (args.season != null && !Number.isFinite(args.season)) {
         throw new Error('--season must be a number (e.g. 2024)');
+    }
+
+    if (args.player != null && !Number.isFinite(args.player)) {
+        throw new Error('--player must be a number (API-Football player id)');
+    }
+
+    if (args.coach != null && !Number.isFinite(args.coach)) {
+        throw new Error('--coach must be a number (API-Football coach id)');
     }
 
     return args;

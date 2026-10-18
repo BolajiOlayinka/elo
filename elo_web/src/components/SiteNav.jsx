@@ -1,6 +1,9 @@
 import { useEffect, useId, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../auth.jsx';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import { ArrowUpRight, CloseIcon, MenuIcon, StarIcon } from './Icons.jsx';
+import { LanguageSelect } from './LanguageSelect.jsx';
 
 function NavItem({ to, active, onClick, children }) {
   return (
@@ -14,13 +17,15 @@ function NavItem({ to, active, onClick, children }) {
 export function SiteNav() {
   const location = useLocation();
   const overlayId = useId();
+  const { session, openLogin, openSignup, updateProfile } = useAuth();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const onRatings = location.pathname === '/ratings'
     || location.pathname.startsWith('/ratings/')
     || location.pathname.startsWith('/profile/');
   const onCompare = location.pathname === '/compare' || location.pathname.startsWith('/compare/');
-  const onAnalyst = location.hash === '#analyst';
-  const onMethod = location.hash === '#method' || location.hash === '#faq';
+  const onAnalysis = location.pathname === '/analysis' || location.pathname.startsWith('/analysis/');
+  const onAccount = location.pathname === '/account';
 
   function close() {
     setOpen(false);
@@ -60,9 +65,12 @@ export function SiteNav() {
 
   const items = (
     <>
-      <NavItem to="/ratings" active={onRatings && !onAnalyst && !onMethod} onClick={close}>Ratings</NavItem>
-      <NavItem to="/#analyst" active={onAnalyst} onClick={close}>AI Analyst</NavItem>
-      <NavItem to="/#method" active={onMethod} onClick={close}>Methodology</NavItem>
+      <NavItem to="/ratings" active={onRatings} onClick={close}>{t('nav.ratings')}</NavItem>
+      <NavItem to="/analysis" active={onAnalysis} onClick={close}>{t('nav.analysis')}</NavItem>
+      <NavItem to="/#method" active={location.hash === '#method' || location.hash === '#faq'} onClick={close}>
+        {t('nav.methodology')}
+      </NavItem>
+      {session ? <NavItem to="/account" active={onAccount} onClick={close}>{t('nav.profile')}</NavItem> : null}
     </>
   );
 
@@ -70,22 +78,38 @@ export function SiteNav() {
     <>
       <header className={open ? 'nav is-open' : 'nav'}>
         <Link className="logo" to="/" onClick={close}>EloStats Football</Link>
-        <nav className="nav-links" aria-label="Primary">
-          <NavItem to="/ratings" active={onRatings && !onAnalyst && !onMethod}>Ratings</NavItem>
-          <NavItem to="/compare" active={onCompare}>Compare</NavItem>
-          <NavItem to="/#analyst" active={onAnalyst}>AI Analyst</NavItem>
-          <NavItem to="/#method" active={onMethod}>Methodology</NavItem>
+        <nav className="nav-links" aria-label={t('nav.primary')}>
+          <NavItem to="/ratings" active={onRatings}>{t('nav.ratings')}</NavItem>
+          <NavItem to="/compare" active={onCompare}>{t('nav.compare')}</NavItem>
+          <NavItem to="/analysis" active={onAnalysis}>{t('nav.analysis')}</NavItem>
+          <NavItem to="/#method" active={location.hash === '#method' || location.hash === '#faq'}>
+            {t('nav.methodology')}
+          </NavItem>
         </nav>
-        <Link className="btn btn-lime btn-explore nav-cta" to="/ratings">
-          Explore Ratings
-          <ArrowUpRight size={10} />
-        </Link>
+        <div className="nav-auth">
+          {session ? (
+            <Link className={onAccount ? 'nav-user is-active' : 'nav-user'} to="/account" title={t('nav.yourProfile')}>
+              {session.photo ? <img src={session.photo} alt="" /> : session.initials}
+            </Link>
+          ) : (
+            <>
+              <button className="nav-login" type="button" onClick={openSignup}>{t('nav.signup')}</button>
+              <button className="btn btn-lime btn-explore nav-cta" type="button" onClick={openLogin}>
+                {t('nav.login')}
+              </button>
+            </>
+          )}
+          <LanguageSelect
+            className="nav-lang"
+            onChange={session ? (id) => updateProfile({ language: id }) : undefined}
+          />
+        </div>
         <button
           type="button"
           className="nav-toggle"
           aria-expanded={open}
           aria-controls={overlayId}
-          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-label={open ? t('nav.close') : t('nav.menu')}
           onClick={() => setOpen((value) => !value)}
         >
           {open ? <CloseIcon /> : <MenuIcon />}
@@ -98,13 +122,30 @@ export function SiteNav() {
             {items}
             <div className="nav-overlay-actions">
               <Link className="btn btn-ghost btn-explore nav-overlay-compare" to="/compare" onClick={close}>
-                Compare
+                {t('nav.compare')}
                 <ArrowUpRight size={10} />
               </Link>
-              <Link className="btn btn-lime btn-explore" to="/ratings" onClick={close}>
-                Explore Ratings
-                <ArrowUpRight size={10} />
-              </Link>
+              {session ? (
+                <>
+                  <LanguageSelect
+                    className="nav-overlay-lang"
+                    onChange={(id) => updateProfile({ language: id })}
+                  />
+                  <Link className="btn btn-lime btn-explore" to="/account" onClick={close}>
+                    {t('nav.profile')}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <LanguageSelect className="nav-overlay-lang" />
+                  <button className="btn btn-ghost btn-explore" type="button" onClick={() => { close(); openSignup(); }}>
+                    {t('nav.signup')}
+                  </button>
+                  <button className="btn btn-lime btn-explore" type="button" onClick={() => { close(); openLogin(); }}>
+                    {t('nav.login')}
+                  </button>
+                </>
+              )}
             </div>
           </nav>
         </div>

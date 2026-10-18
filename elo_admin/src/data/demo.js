@@ -255,49 +255,64 @@ export const ENGINE_FIELDS = [
   {
     id: 'startRating',
     label: 'Starting Elo',
-    hint: 'Unseen clubs and nations start here. Continental games are the bridges between leagues.'
+    hint: 'Unseen clubs and nations start here. Isolated leagues stay near this until cups, promotion, or transfer priors.'
   },
   {
     id: 'kFactor',
     label: 'K-factor',
-    hint: 'How far one result moves a rating. 20 is a common club default.'
+    hint: 'League match step. Cups use 0.75×, friendlies 0.5×.'
   },
   {
     id: 'homeAdvantage',
     label: 'Home advantage (Elo pts)',
-    hint: 'Added to the home club before expected score.'
+    hint: 'Added to the home club. Neutral venues use 0. Away players see opponent Elo + this in Q.'
   },
   {
     id: 'scaleAnchor',
     label: 'Quality anchor',
-    hint: 'Opponent Elo equal to this → multiplier 1.0 on performance.'
+    hint: 'Opponent Elo equal to this → Q = 1 on attacking actions.'
   },
   {
     id: 'qualityScale',
-    label: 'Quality scale',
-    hint: 'Smaller is harsher between leagues. 400 is classic Elo; 600 is softer.'
+    label: 'Quality scale S',
+    hint: 'Placeholder until fitted on transfers. Larger is softer. Caps still apply.'
   },
   {
-    id: 'eraReferenceGpg',
-    label: 'Era reference (goals/game)',
-    hint: 'Scoring environment is divided into this. High-scoring eras shrink each goal.'
+    id: 'qualityCap',
+    label: 'Q cap',
+    hint: 'Maximum opponent-quality multiplier on goals/assists/key passes.'
+  },
+  {
+    id: 'eloSigma',
+    label: 'z → Elo (σ)',
+    hint: 'Player Elo = 1500 + σ × shrunk z. 200 means +2σ → 1900.'
+  },
+  {
+    id: 'minutesPrior',
+    label: 'Minutes prior M₀',
+    hint: 'Shrinkage z × M / (M + M₀). Softens short seasons instead of a 900′ cliff.'
+  },
+  {
+    id: 'honoursBlend',
+    label: 'Honours blend λ',
+    hint: 'Elo+honours = (1−λ) Performance + λ (Performance + capped individual awards). Rich stats: keep small.'
   }
 ];
 
 const PLAYER_PERFORMANCE = [
-  { id: 'npGoals', label: 'Non-penalty goals', hint: 'Open-play and set-piece goals. Scaled by opponent Elo and era.' },
-  { id: 'penalties', label: 'Penalties scored', hint: 'Mostly a role. Keep this below open-play goals.' },
-  { id: 'assists', label: 'Assists', hint: 'Final pass. Same quality/era scaling as goals.' },
-  { id: 'keyPasses', label: 'Key passes', hint: 'Chances created. Replaces successful-pass volume.' },
-  { id: 'tacklesWon', label: 'Tackles won' },
-  { id: 'interceptions', label: 'Interceptions' },
-  { id: 'blocks', label: 'Blocks' },
-  { id: 'aerialsWon', label: 'Aerials won' }
+  { id: 'npGoals', label: 'Non-penalty goals', hint: 'Q-scaled. Mix with share of team goals so super-team strikers are damped.' },
+  { id: 'penalties', label: 'Penalties scored', hint: 'Mostly a role. Keep this below open-play goals. Q-scaled.' },
+  { id: 'assists', label: 'Assists', hint: 'Final pass. Q-scaled and share-damped.' },
+  { id: 'keyPasses', label: 'Key passes', hint: 'Chances created. Q-scaled. Replaces pass volume.' },
+  { id: 'tacklesWon', label: 'Tackles won', hint: 'Not Q-scaled. Possession-adjusted so low-block volume does not win.' },
+  { id: 'interceptions', label: 'Interceptions', hint: 'Not Q-scaled. Possession-adjusted.' },
+  { id: 'blocks', label: 'Blocks', hint: 'Not Q-scaled. Possession-adjusted.' },
+  { id: 'duelsWon', label: 'Duels won', hint: 'API-Football duels.won. Not Q-scaled. Possession-adjusted.' }
 ];
 
 const DISCIPLINE = [
-  { id: 'yellow', label: 'Yellow card', hint: 'Per 90, subtracted. Biased by era and position.', sign: 'minus' },
-  { id: 'red', label: 'Red card', hint: 'Per 90, subtracted.', sign: 'minus' }
+  { id: 'yellow', label: 'Yellow card', hint: 'Unscaled. A card vs Arsenal is not 2.5× a card vs Derby.', sign: 'minus' },
+  { id: 'red', label: 'Red card', hint: 'Unscaled. Subtracted from season points.', sign: 'minus' }
 ];
 
 const INDIVIDUAL_AWARDS = [
@@ -335,9 +350,9 @@ const TEAM_AWARDS = [
 export const TEAM_HONOUR_IDS = new Set(TEAM_AWARDS.map((item) => item.id));
 
 export const PLAYER_PERFORMANCE_GROUPS = [
-  { id: 'attack', title: 'Attack (per 90, opponent-scaled)', metrics: PLAYER_PERFORMANCE.slice(0, 4) },
-  { id: 'defence', title: 'Defence (per 90, opponent-scaled)', metrics: PLAYER_PERFORMANCE.slice(4) },
-  { id: 'discipline', title: 'Discipline', metrics: DISCIPLINE }
+  { id: 'attack', title: 'Attack (Q-scaled, share-damped)', metrics: PLAYER_PERFORMANCE.slice(0, 4) },
+  { id: 'defence', title: 'Defence (possession-adjusted, no Q)', metrics: PLAYER_PERFORMANCE.slice(4) },
+  { id: 'discipline', title: 'Discipline (unscaled)', metrics: DISCIPLINE }
 ];
 
 export const PLAYER_HONOURS_GROUPS = [
@@ -353,13 +368,13 @@ export const KEEPER_PERFORMANCE_GROUPS = [
       {
         id: 'psxgPlus',
         label: 'PSxG − goals conceded',
-        hint: 'Season residual. Positive means the keeper beat expected goals on target.',
+        hint: 'Season residual. Not Q-scaled. Drop if missing; never impute. Own z-stratum.',
         kind: 'rate'
       },
       {
         id: 'savePctResidual',
         label: 'Save % vs expected',
-        hint: 'Percentage points above or below expected. Not save volume.',
+        hint: 'Only if an expected-saves model exists. Not Q-scaled. Do not mix with no-PSxG keepers.',
         kind: 'rate'
       },
       { id: 'penaltiesSaved', label: 'Penalties saved' }
@@ -369,7 +384,7 @@ export const KEEPER_PERFORMANCE_GROUPS = [
     id: 'shared',
     title: 'Team-shared (keep small)',
     metrics: [
-      { id: 'cleanSheets', label: 'Clean sheets', hint: 'A defensive unit stat with the keeper’s name on it.' }
+      { id: 'cleanSheets', label: 'Clean sheets', hint: 'Team stat. Not Q-scaled. Keep the weight small.' }
     ]
   },
   { id: 'discipline', title: 'Discipline', metrics: DISCIPLINE }
@@ -395,12 +410,18 @@ export const COACH_PERFORMANCE_GROUPS = [
       {
         id: 'overperformance',
         label: 'League points vs expected',
-        hint: 'Actual table points minus what the pre-season squad Elo implied. This is the coach spine.',
+        hint: 'Actual table points minus frozen pre-season club Elo over the real schedule. Change, not level.',
+        kind: 'total'
+      },
+      {
+        id: 'level',
+        label: 'Frozen club Elo (per 100 pts above 1500)',
+        hint: 'Stops a 1900-club coach looking average for holding 1900. Pre-season snapshot only.',
         kind: 'total'
       }
     ]
   },
-  { id: 'discipline', title: 'Discipline', metrics: DISCIPLINE }
+  { id: 'discipline', title: 'Touchline cards only', metrics: DISCIPLINE }
 ];
 
 export const COACH_HONOURS_GROUPS = [
@@ -460,20 +481,25 @@ const HONOURS_DEFAULTS = {
   leagueManager: 20
 };
 
-function playerPerformanceFor(positionId) {
-  const fwd = ['st', 'cf', 'lw', 'rw'].includes(positionId);
-  const mid = ['cam', 'cm', 'cdm', 'lm', 'rm'].includes(positionId);
-  const wide = ['lw', 'rw', 'lm', 'rm', 'lb', 'rb', 'wb'].includes(positionId);
+const ROLE_PRIORS = {
+  st: { npGoals: 8, penalties: 3, assists: 5, keyPasses: 1.2, tacklesWon: 0.8, interceptions: 0.8, blocks: 0.5, duelsWon: 1 },
+  cf: { npGoals: 8, penalties: 3, assists: 4.5, keyPasses: 1.3, tacklesWon: 0.9, interceptions: 0.9, blocks: 0.6, duelsWon: 1.2 },
+  lw: { npGoals: 6, penalties: 2, assists: 6, keyPasses: 1.8, tacklesWon: 1.2, interceptions: 1, blocks: 0.6, duelsWon: 1 },
+  rw: { npGoals: 6, penalties: 2, assists: 6, keyPasses: 1.8, tacklesWon: 1.2, interceptions: 1, blocks: 0.6, duelsWon: 1 },
+  cam: { npGoals: 5, penalties: 2, assists: 6, keyPasses: 2.4, tacklesWon: 1.2, interceptions: 1, blocks: 0.6, duelsWon: 0.8 },
+  cm: { npGoals: 4, penalties: 1.5, assists: 5, keyPasses: 1.8, tacklesWon: 2.2, interceptions: 2.2, blocks: 1, duelsWon: 1.2 },
+  cdm: { npGoals: 2, penalties: 1, assists: 3, keyPasses: 1.2, tacklesWon: 3, interceptions: 3.2, blocks: 2, duelsWon: 1.8 },
+  lm: { npGoals: 4, penalties: 1.5, assists: 5, keyPasses: 1.8, tacklesWon: 2, interceptions: 1.8, blocks: 0.8, duelsWon: 1.1 },
+  rm: { npGoals: 4, penalties: 1.5, assists: 5, keyPasses: 1.8, tacklesWon: 2, interceptions: 1.8, blocks: 0.8, duelsWon: 1.1 },
+  lb: { npGoals: 2, penalties: 1, assists: 3.5, keyPasses: 1, tacklesWon: 2.5, interceptions: 2.5, blocks: 1.5, duelsWon: 1.8 },
+  rb: { npGoals: 2, penalties: 1, assists: 3.5, keyPasses: 1, tacklesWon: 2.5, interceptions: 2.5, blocks: 1.5, duelsWon: 1.8 },
+  wb: { npGoals: 3, penalties: 1, assists: 5, keyPasses: 1.6, tacklesWon: 2.2, interceptions: 2, blocks: 1.2, duelsWon: 1.5 },
+  cb: { npGoals: 2, penalties: 1, assists: 1, keyPasses: 0.4, tacklesWon: 3, interceptions: 3, blocks: 2.8, duelsWon: 2.5 }
+};
 
+function playerPerformanceFor(positionId) {
   return fillWeights(allMetrics(PLAYER_PERFORMANCE_GROUPS), {
-    npGoals: fwd ? 8 : mid ? 4 : 3,
-    penalties: fwd ? 3 : 1.5,
-    assists: fwd || wide ? 5 : mid ? 6 : 2,
-    keyPasses: fwd ? 1.2 : mid ? 2 : 0.6,
-    tacklesWon: fwd ? 1 : mid ? 2 : 3,
-    interceptions: fwd ? 0.8 : mid ? 2 : 3,
-    blocks: fwd ? 0.5 : mid ? 1 : 2.5,
-    aerialsWon: fwd ? 1 : mid ? 0.8 : 2,
+    ...(ROLE_PRIORS[positionId] || ROLE_PRIORS.cm),
     yellow: 1.5,
     red: 6
   });
@@ -485,12 +511,21 @@ export const DEFAULT_POINT_CONFIG = {
     kFactor: 20,
     homeAdvantage: 60,
     scaleAnchor: 1500,
-    qualityScale: 600,
-    eraReferenceGpg: 2.7,
+    qualityScale: 800,
+    qualityFloor: 0.45,
+    qualityCap: 2.5,
+    eloSigma: 200,
+    minutesPrior: 1200,
+    minutesFloor: 900,
+    honoursBlend: 0.15,
+    honoursBlendThin: 0.45,
+    honoursBoostCap: 100,
+    drawRate: 0.28,
+    useGoalDifference: true,
     minutesShareHonours: true
   },
   players: {
-    selected: ['st', 'cm', 'cb'],
+    selected: ['st', 'cam', 'cm', 'cdm', 'cb'],
     performance: Object.fromEntries(
       PLAYER_POSITIONS.map((position) => [position.id, playerPerformanceFor(position.id)])
     ),
@@ -510,8 +545,9 @@ export const DEFAULT_POINT_CONFIG = {
   coaches: {
     performance: fillWeights(allMetrics(COACH_PERFORMANCE_GROUPS), {
       overperformance: 2.5,
-      yellow: 1,
-      red: 4
+      level: 8,
+      yellow: 0,
+      red: 0
     }),
     honours: fillWeights(allMetrics(COACH_HONOURS_GROUPS), {
       ...HONOURS_DEFAULTS,

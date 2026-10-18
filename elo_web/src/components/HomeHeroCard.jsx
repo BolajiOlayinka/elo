@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { HOME_HERO_PLAYERS } from '../data/homeHeroPlayers.js';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 const HOLD_MS = 3400;
 const EXIT_MS = 700;
@@ -86,6 +87,7 @@ function Layer({ player, mode }) {
 }
 
 export function HomeHeroCard() {
+  const { t } = useLanguage();
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(null);
@@ -132,15 +134,15 @@ export function HomeHeroCard() {
         <div className="home-hero-facts">
           {FACTS.map(([label, key]) => (
             <div key={key}>
-              <span className="home-hero-k">{label}</span>
+              <span className="home-hero-k">{t(`home.fact.${key}`, label)}</span>
               <span className="home-hero-v">{player[key]}</span>
             </div>
           ))}
         </div>
-        <div className="home-hero-label">Career points</div>
+        <div className="home-hero-label">{t('ratings.careerPointsLabel')}</div>
         <div className="home-hero-points">{points}</div>
         <div className="home-hero-line">
-          <span>Best season · {player.bestSeason}</span>
+          <span>{t('ratings.bestSeason', { season: player.bestSeason })}</span>
           <b>{player.figure}</b>
         </div>
       </div>

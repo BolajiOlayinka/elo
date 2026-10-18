@@ -8,9 +8,12 @@ import {
   PREVIEW_PLAYERS
 } from '../data/previewCases.js';
 import {
+  blendEloWithHonours,
   coachPerformance,
   countingScore,
   honoursScore,
+  individualHonoursScore,
+  mapRatesToElo,
   performanceFromStats,
   rankBy,
   rateMatches
@@ -18,16 +21,41 @@ import {
 
 function withRanks(rows) {
   const byOld = rankBy(rows, 'old');
-  const byRate = rankBy(rows, 'rate');
+  const byRate = rankBy(rows, 'playerElo');
   const byHonours = rankBy(rows, 'honours');
+  const byPlus = rankBy(rows, 'eloPlus');
 
   return rows.map((row) => ({
     ...row,
     oldRank: byOld.get(row.id),
     rateRank: byRate.get(row.id),
     honoursRank: byHonours.get(row.id),
+    plusRank: byPlus.get(row.id),
     delta: byOld.get(row.id) - byRate.get(row.id)
   }));
+}
+
+function finishPeople(rows, config, honoursWeights, thinCoverage = false) {
+  const withHonours = rows.map((row) => {
+    const cabinet = honoursScore(
+      row.honours,
+      honoursWeights,
+      { minutesShare: row.minutesShare },
+      TEAM_HONOUR_IDS,
+      config.engine.minutesShareHonours
+    );
+    const individual = individualHonoursScore(row.honours, honoursWeights, TEAM_HONOUR_IDS);
+    const mapped = { ...row, honours: cabinet, individualHonours: individual };
+
+    return mapped;
+  });
+  const withElo = mapRatesToElo(withHonours, config.engine);
+
+  return withRanks(withElo.map((row) => ({
+    ...row,
+    eloPlus: blendEloWithHonours(row.playerElo, row.individualHonours, config.engine, { thinCoverage }),
+    old: countingScore(row, COUNTING_WEIGHTS)
+  })));
 }
 
 export function previewPlayers(config) {
@@ -37,24 +65,14 @@ export function previewPlayers(config) {
       weights: config.players.performance[row.position] || {},
       minutes: row.minutes,
       opponentElo: row.opponentElo,
-      goalsPerGame: row.goalsPerGame
+      opponentPossession: row.opponentPossession,
+      teamTotals: row.teamTotals
     }, config.engine);
 
-    return {
-      ...row,
-      ...performance,
-      honours: honoursScore(
-        row.honours,
-        config.players.honours,
-        { minutesShare: row.minutesShare },
-        TEAM_HONOUR_IDS,
-        config.engine.minutesShareHonours
-      ),
-      old: countingScore(row, COUNTING_WEIGHTS)
-    };
+    return { ...row, ...performance };
   });
 
-  return withRanks(rows);
+  return finishPeople(rows, config, config.players.honours, false);
 }
 
 export function previewKeepers(config) {
@@ -64,46 +82,46 @@ export function previewKeepers(config) {
       weights: config.keepers.performance,
       minutes: row.minutes,
       opponentElo: row.opponentElo,
-      goalsPerGame: row.goalsPerGame
+      opponentPossession: row.opponentPossession
     }, config.engine);
 
-    return {
-      ...row,
-      ...performance,
-      honours: honoursScore(
-        row.honours,
-        config.keepers.honours,
-        { minutesShare: row.minutesShare },
-        TEAM_HONOUR_IDS,
-        config.engine.minutesShareHonours
-      ),
-      old: countingScore(row, COUNTING_WEIGHTS)
-    };
+    return { ...row, ...performance };
   });
 
-  return withRanks(rows);
+  return finishPeople(rows, config, config.keepers.honours, false);
 }
 
 export function previewCoaches(config) {
   const rows = PREVIEW_COACHES.map((row) => {
-    const rate = coachPerformance(row, config.coaches.performance);
+    const rate = coachPerformance(row, config.coaches.performance, config.engine);
+    const cabinet = honoursScore(
+      row.honours,
+      config.coaches.honours,
+      { minutesShare: 1 },
+      TEAM_HONOUR_IDS,
+      false
+    );
+    const individual = individualHonoursScore(row.honours, config.coaches.honours, TEAM_HONOUR_IDS);
 
     return {
       ...row,
       rate,
       seasonPoints: rate,
-      honours: honoursScore(
-        row.honours,
-        config.coaches.honours,
-        { minutesShare: 1 },
-        TEAM_HONOUR_IDS,
-        false
-      ),
+      honours: cabinet,
+      individualHonours: individual,
       old: countingScore(row, COUNTING_WEIGHTS)
     };
   });
 
-  return withRanks(rows);
+  const withElo = mapRatesToElo(
+    rows.map((row) => ({ ...row, minutes: 3420, position: 'coach', coverage: 'coach' })),
+    config.engine
+  );
+
+  return withRanks(withElo.map((row) => ({
+    ...row,
+    eloPlus: blendEloWithHonours(row.playerElo, row.individualHonours, config.engine)
+  })));
 }
 
 export function previewClubs(config) {

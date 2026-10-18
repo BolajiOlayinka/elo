@@ -1,4 +1,5 @@
 import entityMeta from '../data/compareEntities.json';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 const PORTRAIT_FILES = import.meta.glob([
   '../assets/players/*.webp',
@@ -71,11 +72,12 @@ function shortName(name) {
   return parts.slice(1).join(' ') || trimmed;
 }
 
-function years(item) {
-  return `${item.from}–${item.to || 'now'}`;
+function years(item, nowLabel) {
+  return `${item.from}–${item.to || nowLabel}`;
 }
 
 function CompareCard({ ids, index }) {
+  const { t } = useLanguage();
   const people = ids.map(entity);
   const count = people.length;
   const gap = Math.round(Math.max(...people.map((item) => (item.from + (item.to || 2026)) / 2))
@@ -100,7 +102,7 @@ function CompareCard({ ids, index }) {
             <img src={person.img} alt="" draggable="false" />
             <div className="trend-nm">{count > 2 ? shortName(person.name) : person.name}</div>
             <div className="trend-mt">
-              {count > 2 ? years(person) : `${person.country} · ${person.club}`}
+              {count > 2 ? years(person, t('trend.now')) : `${person.country} · ${person.club}`}
             </div>
           </div>
         ))}
@@ -115,15 +117,15 @@ function CompareCard({ ids, index }) {
       ))}
       {count === 2 ? <div className="trend-vs">VS</div> : null}
       <div className="trend-top">
-        <span className="trend-chip">{GROUP[people[0].group]}</span>
+        <span className="trend-chip">{t(`trend.group.${people[0].group}`, GROUP[people[0].group])}</span>
         {gap > 12 ? (
-          <span className="trend-chip is-ok">{`⇄ ${gap} yrs apart`}</span>
+          <span className="trend-chip is-ok">{t('trend.apart', { n: gap })}</span>
         ) : (
-          <span className="trend-chip">Same era</span>
+          <span className="trend-chip">{t('trend.sameEra')}</span>
         )}
       </div>
       <div className="trend-stat">
-        <div className="trend-lab">Normalised peak (σ)</div>
+        <div className="trend-lab">{t('trend.normalized')}</div>
         <div className="trend-bars" style={{ gridTemplateColumns: `repeat(${count}, 1fr)` }}>
           {people.map((person) => {
             const sigma = (0.8 + hash(`${person.name}σ`) * 2.4).toFixed(2);
@@ -162,11 +164,12 @@ function MarqueeRow({ matchups, reverse }) {
 }
 
 export function TrendingComparisons() {
+  const { t } = useLanguage();
   const offset = Math.floor(MATCHUPS.length / 2);
   const second = [...MATCHUPS.slice(offset), ...MATCHUPS.slice(0, offset)];
 
   return (
-    <div className="trend-showcase" aria-label="Featured comparisons">
+    <div className="trend-showcase" aria-label={t('trend.featured')}>
       <MarqueeRow matchups={MATCHUPS} />
       <MarqueeRow matchups={second} reverse />
     </div>
