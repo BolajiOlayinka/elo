@@ -33,7 +33,7 @@ export default function Staffs() {
     <section>
       <div className="page-head">
         <div>
-          <h1>Staffs</h1>
+          <h1>Staff</h1>
           <p>People who can sign in to this admin.</p>
         </div>
       </div>

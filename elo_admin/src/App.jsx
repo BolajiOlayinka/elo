@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth.jsx';
 import { Layout } from './components/Layout.jsx';
 import Blog from './pages/Blog.jsx';
+import BlogComments from './pages/BlogComments.jsx';
 import BlogTaxonomy from './pages/BlogTaxonomy.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
@@ -39,10 +40,12 @@ function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="analytics" element={<Navigate to="/" replace />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserProfile />} />
           <Route path="points" element={<PointSettings />} />
           <Route path="blog" element={<Blog />} />
+          <Route path="blog/comments" element={<BlogComments />} />
           <Route path="blog/categories" element={<BlogTaxonomy key="categories" type="categories" />} />
           <Route path="blog/tags" element={<BlogTaxonomy key="tags" type="tags" />} />
           <Route

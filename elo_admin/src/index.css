@@ -1,12 +1,12 @@
 :root {
   --bg: #060B11;
   --bg-elevated: #0D1620;
-  --line: rgba(255, 255, 255, 0.08);
+  --line: #285051;
   --text: #F3F6FA;
   --muted: #94A3B8;
   --lime: #BCF766;
   --lime-ink: #11150a;
-  --card: #101823;
+  --card: #131D27;
   font-family: Inter, system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);

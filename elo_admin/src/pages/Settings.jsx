@@ -72,6 +72,13 @@ export default function Settings() {
               onChange={(event) => setProfile({ ...profile, city: event.target.value })}
             />
           </label>
+          <label>
+            Country
+            <input
+              value={profile.country}
+              onChange={(event) => setProfile({ ...profile, country: event.target.value })}
+            />
+          </label>
           <button type="submit" className="btn lime">Save profile</button>
           {profileNotice ? <p className="notice">{profileNotice}</p> : null}
         </form>

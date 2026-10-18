@@ -1,7 +1,9 @@
 export const STATS = {
   users: 1842,
   usersLogin: 327,
-  pageVisits: 48190,
+  pageVisits: 1042680,
+  liveNow: 118,
+  signups30: 214,
   players: 12864,
   leagues: 214,
   coaches: 1903,
@@ -11,6 +13,12 @@ export const STATS = {
 };
 
 export const VISITS = [18, 22, 19, 28, 31, 26, 34, 29, 41, 38, 44, 52, 47, 55];
+
+export const VISITS_30 = [
+  28410, 27120, 30180, 31840, 29660, 33410, 35220, 34100, 36880, 35540,
+  38110, 40260, 39440, 42180, 41020, 43860, 45610, 44200, 46880, 48120,
+  47340, 49860, 51240, 50410, 52880, 54120, 53340, 55810, 57260, 56140
+];
 
 export const USERS = [
   {
@@ -182,11 +190,13 @@ export const STAFF = [
 
 export const PERMISSIONS = [
   'View dashboard',
+  'View analytics',
   'Manage users',
   'Edit point weights',
   'Manage staff',
   'Manage roles',
   'Publish ratings',
+  'Moderate comments',
   'Run ingest'
 ];
 
@@ -207,13 +217,13 @@ export const ROLES = [
     id: 'analyst',
     name: 'Analyst',
     description: 'Tune point weights and inspect ratings.',
-    permissions: ['View dashboard', 'Edit point weights', 'Publish ratings']
+    permissions: ['View dashboard', 'View analytics', 'Edit point weights', 'Publish ratings']
   },
   {
     id: 'editor',
     name: 'Editor',
     description: 'Update copy and public-facing records.',
-    permissions: ['View dashboard', 'Publish ratings']
+    permissions: ['View dashboard', 'View analytics', 'Publish ratings', 'Moderate comments']
   },
   {
     id: 'viewer',
@@ -577,6 +587,134 @@ export const SESSION = {
   country: 'Nigeria',
   city: 'Lagos'
 };
+
+const MEMBER_EXTRAS = {
+  u1: {
+    language: 'en',
+    online: true,
+    lastSeen: 'Now',
+    device: 'Chrome · macOS',
+    landing: '/ratings',
+    referrer: 'Direct',
+    bio: 'Tracking West African careers against the European peak window.',
+    dob: '1994-03-11',
+    follows: ['Player 01', 'Player 04', 'Player 12'],
+    comparisons: [
+      { left: 'Player 01', right: 'Player 02', when: 'Today 09:18' },
+      { left: 'Player 04', right: 'Player 18', when: '12 Oct' }
+    ],
+    debates: 6,
+    reputation: 42
+  },
+  u2: {
+    language: 'en',
+    online: true,
+    lastSeen: 'Now',
+    device: 'Safari · iOS',
+    landing: '/analysis',
+    referrer: 'Twitter',
+    bio: 'Writes for the Analysis desk. Interested in midfield z-splits.',
+    dob: '1988-07-02',
+    follows: ['Player 02', 'Player 07', 'Player 09', 'Player 21'],
+    comparisons: [
+      { left: 'Player 07', right: 'Player 21', when: 'Today 08:11' },
+      { left: 'Player 02', right: 'Player 05', when: '11 Oct' }
+    ],
+    debates: 14,
+    reputation: 118
+  },
+  u3: {
+    language: 'pt',
+    online: false,
+    lastSeen: '9 Oct 21:40',
+    device: 'Firefox · Android',
+    landing: '/compare',
+    referrer: 'Google',
+    bio: '',
+    dob: '1999-11-20',
+    follows: ['Player 08'],
+    comparisons: [{ left: 'Player 08', right: 'Player 03', when: '9 Oct' }],
+    debates: 1,
+    reputation: 4
+  },
+  u4: {
+    language: 'en',
+    online: false,
+    lastSeen: '11 Oct 16:28',
+    device: 'Chrome · Windows',
+    landing: '/',
+    referrer: 'Direct',
+    bio: 'J-League coverage and transfer bridges.',
+    dob: '1991-01-30',
+    follows: ['Player 11', 'Player 16'],
+    comparisons: [{ left: 'Player 11', right: 'Player 16', when: '11 Oct' }],
+    debates: 3,
+    reputation: 19
+  },
+  u5: {
+    language: 'es',
+    online: true,
+    lastSeen: 'Now',
+    device: 'Chrome · Android',
+    landing: '/profile/players/players-1',
+    referrer: 'WhatsApp',
+    bio: 'Copa América eras vs club peaks.',
+    dob: '1996-05-14',
+    follows: ['Player 03', 'Player 06', 'Player 14', 'Player 22'],
+    comparisons: [
+      { left: 'Player 03', right: 'Player 06', when: 'Today 11:02' },
+      { left: 'Player 14', right: 'Player 22', when: '10 Oct' }
+    ],
+    debates: 8,
+    reputation: 57
+  },
+  u6: {
+    language: 'fr',
+    online: false,
+    lastSeen: '8 Oct 19:51',
+    device: 'Safari · macOS',
+    landing: '/analysis/henry-2003-04-peak-vs-salah-2017-18',
+    referrer: 'Google',
+    bio: '',
+    dob: '1987-09-04',
+    follows: ['Player 05'],
+    comparisons: [],
+    debates: 2,
+    reputation: 11
+  },
+  u7: {
+    language: 'en',
+    online: false,
+    lastSeen: 'Never',
+    device: '—',
+    landing: '/account',
+    referrer: 'Direct',
+    bio: '',
+    dob: '',
+    follows: [],
+    comparisons: [],
+    debates: 0,
+    reputation: 0
+  },
+  u8: {
+    language: 'de',
+    online: false,
+    lastSeen: '10 Oct 07:33',
+    device: 'Edge · Windows',
+    landing: '/ratings',
+    referrer: 'Newsletter',
+    bio: 'Bundesliga minutes and era notes.',
+    dob: '1993-12-08',
+    follows: ['Player 10', 'Player 19'],
+    comparisons: [{ left: 'Player 10', right: 'Player 19', when: '10 Oct' }],
+    debates: 4,
+    reputation: 23
+  }
+};
+
+USERS.forEach((user) => {
+  Object.assign(user, MEMBER_EXTRAS[user.id] || {});
+});
 
 export function getUser(id) {
   return USERS.find((user) => user.id === id) || null;

@@ -23,11 +23,12 @@ const LINKS = [
     icon: IconBlog,
     children: [
       { to: '/blog', label: 'Posts', end: true },
+      { to: '/blog/comments', label: 'Comments' },
       { to: '/blog/categories', label: 'Categories' },
       { to: '/blog/tags', label: 'Tags' }
     ]
   },
-  { to: '/staffs', label: 'Staffs', icon: IconBadge },
+  { to: '/staffs', label: 'Staff', icon: IconBadge },
   { to: '/roles', label: 'User roles', icon: IconShield },
   { to: '/settings', label: 'Settings', icon: IconCog }
 ];

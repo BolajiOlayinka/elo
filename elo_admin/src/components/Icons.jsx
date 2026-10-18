@@ -106,6 +106,22 @@ export function IconTrash() {
   );
 }
 
+export function IconChart() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3 12.5V7.2M7 12.5V4.4M11 12.5V8.6M13.4 12.5H2.6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconChat() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3 3.6h10v6.4H7.2L4.2 12.4V10H3V3.6Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconSearch() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

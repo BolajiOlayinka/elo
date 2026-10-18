@@ -222,6 +222,15 @@ export function UserPlusIcon({ size = 16 }) {
   );
 }
 
+export function SearchIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M10.2 10.2 13.4 13.4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function InfoIcon({ size = 14 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
