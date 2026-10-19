@@ -9,6 +9,12 @@ class FootballController {
         res.json({ error: false, ...result });
     }
 
+    static async stats(req, res) {
+        const result = await FootballService.stats();
+
+        res.json({ error: false, data: result });
+    }
+
     static async profiles(req, res) {
         const result = await FootballService.profiles(req.query);
 

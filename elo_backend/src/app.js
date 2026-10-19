@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const env = require('./config/env');
+const redisClient = require('./config/redis');
 const errorHandler = require('./shared/middleware/error-handler');
 const { mountAdmin, mountWeb } = require('./web/static');
 const { UPLOAD_DIR } = require('./modules/uploads/upload.service');
@@ -45,7 +46,7 @@ const v1Router = require('./modules/router/v1.router');
 
 app.use('/api/v1', v1Router);
 
-if (env.REDIS_URL) {
+if (redisClient) {
     const bullBoardRouter = require('./infra/queue/bull-board');
 
     app.use('/admin/queues', bullBoardRouter);

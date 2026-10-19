@@ -7,6 +7,7 @@ const { idParams, pageQuery, profileParams, ratingsQuery } = require('./dto/quer
 
 const router = express.Router();
 
+router.get('/stats', FootballController.stats);
 router.get('/ratings', Validator.middleware({ query: ratingsQuery }), FootballController.ratings);
 router.get('/profiles', Validator.middleware({ query: ratingsQuery }), FootballController.profiles);
 router.get('/profiles/:type/:id', Validator.middleware({ params: profileParams }), FootballController.profile);

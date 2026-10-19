@@ -2,7 +2,10 @@
 
 const { NotFoundException } = require('../../shared/exceptions');
 const board = require('./board');
+const remember = require('./remember');
 const repository = require('./repository');
+
+let boardBuild = null;
 
 function publicLeague(row) {
     return {
@@ -41,56 +44,159 @@ function paginate(rows, { page, limit, q }) {
     };
 }
 
-async function ratings(query) {
-    const snapshot = await board.ensure(query.refresh);
-    const rows = snapshot[query.entity] || [];
-    const page = paginate(rows, query);
+function startBoardBuild() {
+    if (boardBuild) {
+        return boardBuild;
+    }
 
-    return {
+    boardBuild = repository.setBoardMeta({ status: 'building' })
+        .then(() => board.build())
+        .then((snapshot) => repository.replaceBoard(snapshot))
+        .then(() => remember.clear('ratings:*'))
+        .catch(async (error) => {
+            await repository.setBoardMeta({
+                status: 'error',
+                error: error.message
+            });
+            throw error;
+        })
+        .finally(() => {
+            boardBuild = null;
+        });
+
+    return boardBuild;
+}
+
+async function ratings(query) {
+    if (query.refresh) {
+        startBoardBuild();
+    }
+
+    const cacheKey = `ratings:${query.entity}:${query.page}:${query.limit}:${query.q || ''}`;
+
+    if (!query.refresh) {
+        const cached = await remember.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+    }
+
+    const [meta, hasRows] = await Promise.all([
+        repository.getBoardMeta(),
+        repository.boardHasRows(query.entity)
+    ]);
+
+    if (!hasRows) {
+        startBoardBuild();
+
+        return {
+            data: [],
+            meta: {
+                page: query.page,
+                limit: query.limit,
+                total: 0,
+                pages: 1,
+                entity: query.entity,
+                builtAt: meta?.built_at || null,
+                matches: meta?.matches || 0,
+                building: true
+            }
+        };
+    }
+
+    const page = await repository.listBoard(query);
+    const result = {
         ...page,
         meta: {
             ...page.meta,
             entity: query.entity,
-            builtAt: snapshot.builtAt,
-            matches: snapshot.matches
+            builtAt: meta?.built_at || null,
+            matches: meta?.matches || 0,
+            building: meta?.status === 'building'
         }
     };
+
+    await remember.set(cacheKey, result, 90);
+
+    return result;
 }
 
 async function profile(type, id) {
-    const snapshot = await board.ensure(false);
-    const row = snapshot.index.get(`${type}:${id}`);
+    const row = await repository.getBoardRow(type, id);
 
     if (!row) {
+        const hasBoard = await repository.boardHasRows(type);
+
+        if (!hasBoard) {
+            startBoardBuild();
+        }
+
         throw new NotFoundException('Profile not found');
     }
 
-    const rivals = (snapshot[type] || [])
-        .filter((item) => item.id !== row.id)
-        .slice(Math.max(0, row.rank - 2), row.rank + 2)
-        .filter((item) => item.id !== row.id)
-        .slice(0, 3);
+    const rivals = await repository.listBoardRivals(type, row.rank, id);
 
     return { ...row, rivals };
+}
+
+async function stats() {
+    const cached = await remember.get('catalog:stats:v2');
+
+    if (cached) {
+        return cached;
+    }
+
+    const counts = await repository.catalogCounts();
+    const span = counts.yearFrom != null && counts.yearTo != null
+        ? Math.max(1, counts.yearTo - counts.yearFrom + 1)
+        : 0;
+    const result = {
+        leagues: counts.leagues,
+        matches: counts.matches,
+        players: counts.players,
+        years: {
+            from: counts.yearFrom,
+            to: counts.yearTo,
+            span
+        }
+    };
+
+    await remember.set('catalog:stats:v2', result, 120);
+
+    return result;
 }
 
 async function profiles(query) {
     return ratings({ ...query, entity: query.entity });
 }
 
-async function leagues(query) {
-    const [rows, snapshot] = await Promise.all([
-        repository.listLeagues(),
-        board.ensure(false).catch(() => null)
-    ]);
-    const elo = new Map((snapshot?.leagues || []).map((row) => [Number(row.id), row]));
-    const shaped = rows.map((row) => ({
-        ...publicLeague(row),
-        elo: elo.get(row.id)?.eloNum ?? null,
-        rank: elo.get(row.id)?.rank ?? null
-    }));
+async function ratingLookup(entity, ids) {
+    const rows = await repository.boardByIds(entity, ids);
+    const map = new Map();
 
-    return paginate(shaped, query);
+    rows.forEach((item) => {
+        if (item.row) {
+            map.set(Number(item.id), item.row);
+        }
+    });
+
+    return map;
+}
+
+async function leagues(query) {
+    const rows = await repository.listLeagues();
+    const page = paginate(rows.map(publicLeague), query);
+    const elo = await ratingLookup('leagues', page.data.map((row) => row.id));
+
+    return {
+        ...page,
+        data: page.data.map((row) => ({
+            ...row,
+            elo: elo.get(row.id)?.eloNum ?? null,
+            rank: elo.get(row.id)?.rank ?? null
+        }))
+    };
 }
 
 async function league(id) {
@@ -100,54 +206,63 @@ async function league(id) {
         throw new NotFoundException('League not found');
     }
 
-    const snapshot = await board.ensure(false).catch(() => null);
-
     return {
         ...publicLeague(row),
-        rating: snapshot?.index.get(`leagues:${id}`) || null
+        rating: await repository.getBoardRow('leagues', id)
     };
 }
 
 async function competitions(query) {
-    const snapshot = await board.ensure(false).catch(() => null);
-    const rows = snapshot
-        ? snapshot.competitions
-        : (await repository.listCompetitions()).map(publicLeague);
+    const cached = await repository.listBoard({
+        entity: 'competitions',
+        page: query.page,
+        limit: query.limit,
+        q: query.q
+    }).catch(() => null);
+
+    if (cached?.meta?.total) {
+        return cached;
+    }
+
+    const rows = (await repository.listCompetitions()).map(publicLeague);
 
     return paginate(rows, query);
 }
 
 async function competition(id) {
+    const rated = await repository.getBoardRow('competitions', id);
+
+    if (rated) {
+        return rated;
+    }
+
     const row = await repository.getLeague(id);
 
     if (!row || row.kind === 'league') {
         throw new NotFoundException('Competition not found');
     }
 
-    const snapshot = await board.ensure(false).catch(() => null);
-    const rated = (snapshot?.competitions || []).find((item) => item.id === row.id);
-
-    return rated || publicLeague(row);
+    return publicLeague(row);
 }
 
 async function coaches(query) {
-    const [rows, snapshot] = await Promise.all([
-        repository.listCoaches(),
-        board.ensure(false).catch(() => null)
-    ]);
-    const elo = new Map((snapshot?.coaches || []).map((row) => [Number(row.id), row]));
-    const shaped = rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        nationality: row.nationality,
-        birthDate: row.birth_date,
-        photo: row.photo_url,
-        club: row.team_name,
-        elo: elo.get(row.id)?.eloNum ?? null,
-        rank: elo.get(row.id)?.rank ?? null
-    }));
+    const rows = await repository.listCoaches();
+    const page = paginate(rows, query);
+    const elo = await ratingLookup('coaches', page.data.map((row) => row.id));
 
-    return paginate(shaped, query);
+    return {
+        ...page,
+        data: page.data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            nationality: row.nationality,
+            birthDate: row.birth_date,
+            photo: row.photo_url,
+            club: row.team_name,
+            elo: elo.get(row.id)?.eloNum ?? null,
+            rank: elo.get(row.id)?.rank ?? null
+        }))
+    };
 }
 
 async function coach(id) {
@@ -156,8 +271,6 @@ async function coach(id) {
     if (!row) {
         throw new NotFoundException('Coach not found');
     }
-
-    const snapshot = await board.ensure(false).catch(() => null);
 
     return {
         id: row.id,
@@ -168,7 +281,7 @@ async function coach(id) {
         photo: row.photo_url,
         club: row.team_name,
         tenures: row.tenures,
-        rating: snapshot?.index.get(`coaches:${id}`) || null
+        rating: await repository.getBoardRow('coaches', id)
     };
 }
 
@@ -176,6 +289,7 @@ module.exports = {
     ratings,
     profile,
     profiles,
+    stats,
     leagues,
     league,
     competitions,

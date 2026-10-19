@@ -15,29 +15,43 @@ export default function RatingsPage() {
   const [rows, setRows] = useState([]);
   const [pageCount, setPageCount] = useState(1);
   const [status, setStatus] = useState('loading');
+  const [building, setBuilding] = useState(false);
 
   useEffect(() => {
     let cancel = false;
+    let timer = null;
 
-    setStatus('loading');
-    getRatings(tab, page)
-      .then((body) => {
-        if (cancel) {
-          return;
-        }
+    function load() {
+      setStatus('loading');
+      getRatings(tab, page)
+        .then((body) => {
+          if (cancel) {
+            return;
+          }
 
-        setRows(body?.data || []);
-        setPageCount(body?.meta?.pages || 1);
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (!cancel) {
-          setStatus('error');
-        }
-      });
+          setRows(body?.data || []);
+          setPageCount(body?.meta?.pages || 1);
+          setBuilding(Boolean(body?.meta?.building));
+          setStatus('ready');
+
+          if (body?.meta?.building && !(body?.data || []).length) {
+            timer = setTimeout(load, 5000);
+          }
+        })
+        .catch(() => {
+          if (!cancel) {
+            setStatus('error');
+          }
+        });
+    }
+
+    load();
 
     return () => {
       cancel = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
   }, [tab, page]);
 
@@ -96,7 +110,13 @@ export default function RatingsPage() {
                 <tr><td colSpan={7}>Ratings are unavailable. Start the API and try again.</td></tr>
               ) : null}
               {status === 'ready' && visible.length === 0 ? (
-                <tr><td colSpan={7}>No ratings in this board yet.</td></tr>
+                <tr>
+                  <td colSpan={7}>
+                    {building
+                      ? 'Computing the board from the match record. This page stays paginated — it will fill from cache when the snapshot is ready.'
+                      : 'No ratings in this board yet.'}
+                  </td>
+                </tr>
               ) : null}
               {status === 'ready' ? visible.map((row) => (
                 <tr key={row.id}>

@@ -688,5 +688,6 @@ function ensure(refresh) {
 }
 
 module.exports = {
-    ensure
+    ensure,
+    build
 };

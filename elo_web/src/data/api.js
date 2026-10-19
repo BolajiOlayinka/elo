@@ -14,6 +14,10 @@ async function getJson(path) {
   return response.json();
 }
 
+export function getCatalogStats() {
+  return getJson('/api/v1/stats').then((body) => body?.data || body);
+}
+
 export function getRatings(entity, page = 1, q = '', limit = 10) {
   const params = new URLSearchParams({
     entity,

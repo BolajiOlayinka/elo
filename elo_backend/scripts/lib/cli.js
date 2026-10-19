@@ -12,7 +12,8 @@ function parseIngestArgs(argv) {
         league: null,
         season: null,
         player: null,
-        coach: null
+        coach: null,
+        maxRequests: null
     };
 
     for (let index = 2; index < argv.length; index += 1) {
@@ -46,6 +47,9 @@ function parseIngestArgs(argv) {
         } else if (flag === '--coach') {
             args.coach = Number(argv[index + 1]);
             index += 1;
+        } else if (flag === '--max-requests') {
+            args.maxRequests = Number(argv[index + 1]);
+            index += 1;
         } else {
             throw new Error(`Unknown argument: ${flag}`);
         }
@@ -65,6 +69,10 @@ function parseIngestArgs(argv) {
 
     if (args.coach != null && !Number.isFinite(args.coach)) {
         throw new Error('--coach must be a number (API-Football coach id)');
+    }
+
+    if (args.maxRequests != null && (!Number.isFinite(args.maxRequests) || args.maxRequests < 0)) {
+        throw new Error('--max-requests must be 0 (no local cap) or a positive number');
     }
 
     return args;

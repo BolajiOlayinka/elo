@@ -12,6 +12,10 @@ class CacheService {
      * @returns {Promise<string>} Returns 'OK' if successful
      */
     static async set(key, value, ttl = null) {
+        if (!redisClient) {
+            return null;
+        }
+
         try {
             const serializedValue = JSON.stringify(value);
             
@@ -32,6 +36,10 @@ class CacheService {
      * @returns {Promise<any|null>} Parsed value or null if not found
      */
     static async get(key) {
+        if (!redisClient) {
+            return null;
+        }
+
         try {
             const value = await redisClient.get(key);
             
@@ -53,6 +61,10 @@ class CacheService {
      * @returns {Promise<number>} Number of keys deleted (0 or 1)
      */
     static async del(key) {
+        if (!redisClient) {
+            return 0;
+        }
+
         try {
             return await redisClient.del(key);
         } catch (error) {
@@ -170,6 +182,10 @@ class CacheService {
      * @returns {Promise<number>} Number of keys deleted
      */
     static async delPattern(pattern) {
+        if (!redisClient) {
+            return 0;
+        }
+
         try {
             const keys = await redisClient.keys(pattern);
             if (keys.length === 0) {

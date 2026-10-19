@@ -255,6 +255,185 @@ async function loadLatestStandingTeams() {
         .select('s.league_id', 's.team_id', 's.season_year');
 }
 
+const BOARD_ENTITIES = ['players', 'keepers', 'coaches', 'leagues', 'countries', 'competitions'];
+
+async function catalogCounts() {
+    const [tracked, scoped, leagues, matches, ratedPlayers, players, years] = await Promise.all([
+        db('matches')
+            .whereIn('status_short', FINISHED)
+            .whereNotNull('home_goals')
+            .countDistinct('league_id as count')
+            .first(),
+        db('leagues').where({ kind: 'league', in_scope: true }).count('* as count').first(),
+        db('leagues').where({ kind: 'league' }).count('* as count').first(),
+        db('matches')
+            .whereIn('status_short', FINISHED)
+            .whereNotNull('home_goals')
+            .whereNotNull('away_goals')
+            .count('* as count')
+            .first(),
+        db('player_season_stats').countDistinct('player_id as count').first(),
+        db('players').count('* as count').first(),
+        db('matches').whereNotNull('season_year').min('season_year as min').max('season_year as max').first()
+    ]);
+
+    return {
+        leagues: Number(tracked?.count) || Number(scoped?.count) || Number(leagues?.count) || 0,
+        matches: Number(matches?.count) || 0,
+        players: Number(ratedPlayers?.count) || Number(players?.count) || 0,
+        yearFrom: years?.min == null ? null : Number(years.min),
+        yearTo: years?.max == null ? null : Number(years.max)
+    };
+}
+
+async function getBoardMeta() {
+    return db('rating_board_meta').where({ id: 'current' }).first();
+}
+
+async function setBoardMeta(payload) {
+    const row = {
+        id: 'current',
+        status: payload.status,
+        built_at: payload.built_at || null,
+        matches: payload.matches || 0,
+        error: payload.error || null,
+        updated_at: new Date()
+    };
+    const existing = await getBoardMeta();
+
+    if (existing) {
+        return db('rating_board_meta').where({ id: 'current' }).update(row);
+    }
+
+    return db('rating_board_meta').insert(row);
+}
+
+function parsePayload(value) {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return null;
+        }
+    }
+
+    return value;
+}
+
+async function replaceBoard(snapshot) {
+    await db.transaction(async (trx) => {
+        await trx('rating_board').del();
+
+        for (const entity of BOARD_ENTITIES) {
+            const rows = snapshot[entity] || [];
+            const chunkSize = 250;
+
+            for (let index = 0; index < rows.length; index += chunkSize) {
+                const chunk = rows.slice(index, index + chunkSize).map((row) => ({
+                    entity,
+                    entity_id: Number(row.id),
+                    rank: Number(row.rank) || 0,
+                    name: row.name || '',
+                    payload: JSON.stringify(row),
+                    updated_at: new Date()
+                })).filter((row) => Number.isFinite(row.entity_id));
+
+                if (chunk.length) {
+                    await trx('rating_board').insert(chunk);
+                }
+            }
+        }
+
+        await trx('rating_board_meta').del();
+        await trx('rating_board_meta').insert({
+            id: 'current',
+            status: 'ready',
+            built_at: snapshot.builtAt,
+            matches: snapshot.matches || 0,
+            error: null,
+            updated_at: new Date()
+        });
+    });
+}
+
+async function listBoard({ entity, page, limit, q }) {
+    const currentPage = Math.max(1, Number(page) || 1);
+    const pageSize = Math.max(1, Number(limit) || 20);
+    const query = db('rating_board').where({ entity });
+    const needle = String(q || '').trim();
+
+    if (needle) {
+        query.andWhere('name', 'ilike', `%${needle.replace(/[%_]/g, '')}%`);
+    }
+
+    const [totalRow, rows] = await Promise.all([
+        query.clone().count('* as count').first(),
+        query.clone()
+            .select('payload')
+            .orderBy('rank', 'asc')
+            .limit(pageSize)
+            .offset((currentPage - 1) * pageSize)
+    ]);
+    const total = Number(totalRow?.count) || 0;
+
+    return {
+        data: rows.map((row) => parsePayload(row.payload)).filter(Boolean),
+        meta: {
+            page: currentPage,
+            limit: pageSize,
+            total,
+            pages: Math.max(1, Math.ceil(total / pageSize))
+        }
+    };
+}
+
+async function getBoardRow(entity, id) {
+    const row = await db('rating_board')
+        .where({ entity, entity_id: Number(id) })
+        .first();
+
+    return parsePayload(row?.payload);
+}
+
+async function listBoardRivals(entity, rank, id) {
+    const rows = await db('rating_board')
+        .where({ entity })
+        .andWhere('rank', '>=', Math.max(1, rank - 2))
+        .andWhere('rank', '<=', rank + 2)
+        .andWhereNot('entity_id', Number(id))
+        .orderBy('rank', 'asc')
+        .limit(3)
+        .select('payload');
+
+    return rows.map((row) => parsePayload(row.payload)).filter(Boolean);
+}
+
+async function boardByIds(entity, ids) {
+    if (!ids.length) {
+        return [];
+    }
+
+    const rows = await db('rating_board')
+        .where({ entity })
+        .whereIn('entity_id', ids)
+        .select('entity_id', 'payload');
+
+    return rows.map((row) => ({
+        id: row.entity_id,
+        row: parsePayload(row.payload)
+    }));
+}
+
+async function boardHasRows(entity) {
+    const row = await db('rating_board').where({ entity }).count('* as count').first();
+
+    return Number(row?.count) > 0;
+}
+
 module.exports = {
     listLeagues,
     listCompetitions,
@@ -267,5 +446,14 @@ module.exports = {
     loadMatchCoaches,
     loadCoachIdentities,
     loadLeagueDirectory,
-    loadLatestStandingTeams
+    loadLatestStandingTeams,
+    catalogCounts,
+    getBoardMeta,
+    setBoardMeta,
+    replaceBoard,
+    listBoard,
+    getBoardRow,
+    listBoardRivals,
+    boardByIds,
+    boardHasRows
 };

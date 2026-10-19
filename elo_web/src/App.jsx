@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
 import ellipseSrc from './assets/ellipse.png';
 import { ArrowUpRight } from './components/Icons.jsx';
@@ -15,6 +15,7 @@ import AccountPage from './pages/AccountPage.jsx';
 import DebateIndexPage from './pages/DebateIndexPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import RatingsPage from './pages/RatingsPage.jsx';
+import { getCatalogStats } from './data/api.js';
 import './App.css';
 
 // const messiPhotos = import.meta.glob('./assets/messi.png', {
@@ -589,8 +590,21 @@ function FaqList() {
   );
 }
 
+function formatCount(value) {
+  const amount = Number(value) || 0;
+
+  return amount.toLocaleString('en-GB');
+}
+
 function LandingPage() {
   const { t } = useLanguage();
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    getCatalogStats()
+      .then(setStats)
+      .catch(() => setStats(null));
+  }, []);
 
   return (
     <div className="page">
@@ -668,19 +682,23 @@ function LandingPage() {
       <section className="stats">
         <div className="wrap stats-inner">
           <div>
-            <strong>50+</strong>
+            <strong>{stats ? formatCount(stats.leagues) : '—'}</strong>
             <span>{t('home.statLeagues')}</span>
           </div>
           <div>
-            <strong>100,000+</strong>
+            <strong>{stats ? formatCount(stats.matches) : '—'}</strong>
             <span>{t('home.statMatches')}</span>
           </div>
           <div>
-            <strong>12,000+</strong>
+            <strong>{stats ? formatCount(stats.players) : '—'}</strong>
             <span>{t('home.statPlayers')}</span>
           </div>
           <div>
-            <strong>{t('home.statYearsValue')}</strong>
+            <strong>
+              {stats?.years?.span
+                ? t('home.statYearsValue', { n: stats.years.span })
+                : '—'}
+            </strong>
             <span>{t('home.statYears')}</span>
           </div>
         </div>

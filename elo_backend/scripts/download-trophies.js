@@ -10,8 +10,10 @@
  *   node scripts/download-trophies.js --coach 2
  *   node scripts/download-trophies.js --league 39 --season 2024
  *   node scripts/download-trophies.js --all
+ *   node scripts/download-trophies.js --all --max-requests 0
  *
- * Resume skips existing trophies/{players|coaches}/{id}.json. Quota pause + re-run.
+ * Resume skips existing trophies/{players|coaches}/{id}.json.
+ * --all has no 10k local cap; it stops when API-Football daily remaining is gone.
  */
 
 const fs = require('fs/promises');
@@ -47,7 +49,7 @@ async function main() {
         throw new Error('API_FOOTBALL_KEY is missing');
     }
 
-    const maxRequests = Number(process.env.INGEST_MAX_REQUESTS) || (args.smoke ? 5 : 10000);
+    const maxRequests = resolveMaxRequests(args);
     const client = createClient({ apiKey, maxRequests, minGapMs: 150, verbose: args.verbose });
     const s3 = args.skipS3 ? null : await createUploadContext();
 
@@ -89,10 +91,11 @@ async function main() {
     }
 
     const progress = createProgress({ mode: 'download-trophies', total: jobs.length });
+    const budgetLabel = maxRequests == null ? 'API daily remaining' : `${maxRequests} local requests`;
 
     await progress.log(
         `Download trophies for ${players.length} players and ${coaches.length} coaches (resume skip existing files).`
-        + ` Log: ${progress.logFile}`
+        + ` Budget: ${budgetLabel}. Log: ${progress.logFile}`
     );
 
     for (let index = 0; index < jobs.length; index += 1) {
@@ -154,6 +157,34 @@ async function downloadOne(client, s3, args, kind, id) {
     }
 
     return payload;
+}
+
+function resolveMaxRequests(args) {
+    if (args.smoke) {
+        return 5;
+    }
+
+    if (args.maxRequests === 0 || process.env.INGEST_MAX_REQUESTS === '0') {
+        return null;
+    }
+
+    if (args.maxRequests != null) {
+        return args.maxRequests;
+    }
+
+    if (process.env.INGEST_MAX_REQUESTS) {
+        const fromEnv = Number(process.env.INGEST_MAX_REQUESTS);
+
+        return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : null;
+    }
+
+    // --all is a multi-day job. Do not stop every 10k; the client already
+    // pauses when API-Football daily remaining is nearly gone.
+    if (args.all) {
+        return null;
+    }
+
+    return 10000;
 }
 
 function trophyPath(kind, id) {

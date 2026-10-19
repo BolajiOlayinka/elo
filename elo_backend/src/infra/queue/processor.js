@@ -16,6 +16,10 @@ const redisClient = require('../../config/redis');
  * @returns {BullMQWorker}
  */
 async function setupQueueProcessor(queueName, processor, options = {}) {
+    if (!redisClient) {
+        return null;
+    }
+
     const worker = new BullMQWorker(
         queueName,
         async (job) => {
