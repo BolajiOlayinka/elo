@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import bellingham from '../assets/players/jude-bellingham.webp';
 import haaland from '../assets/players/erling-haaland.webp';
@@ -14,7 +14,7 @@ import { LineChart } from '../components/EntityMarks.jsx';
 import { InfoIcon, SearchIcon, ShareIcon, SwapIcon } from '../components/Icons.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
 import { getAwardImage } from '../data/awards.js';
-import { getRankingItem, getRankings } from '../data/rankings.js';
+import { getRatings } from '../data/api.js';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
 const COLORS = ['#5B8DEF', '#BCF766', '#F3B46A'];
@@ -30,19 +30,7 @@ function flagSrc(code) {
 }
 
 function enrich(item) {
-  if (!item) {
-    return null;
-  }
-
-  const n = item.rank;
-
-  return {
-    ...item,
-    photo: PORTRAITS[(n - 1) % PORTRAITS.length],
-    universal: Math.max(62, 90 - Math.floor(n / 2)),
-    dribbleNum: 25 - (n % 7),
-    timeline: item.timeline.map((value, index) => Math.round(value - (n - 1) * 140 - index * 18))
-  };
+  return item || null;
 }
 
 function signed(value) {
@@ -60,7 +48,7 @@ function CountryFlag({ code }) {
 }
 
 function DuelCard({ item, color, t, side, lead, onSearch, onExplain }) {
-  const awards = item.accolades.filter((award) => (award.count || 0) > 0).slice(0, 4);
+  const awards = (item.accolades || []).filter((award) => (award.count || 0) > 0).slice(0, 4);
 
   return (
     <article className={`cmp-card is-${side}${lead ? ' is-lead' : ''}`}>
@@ -103,7 +91,7 @@ function DuelCard({ item, color, t, side, lead, onSearch, onExplain }) {
         </div>
         <div>
           <span>{t('compare.universal')}</span>
-          <b>{item.universal}</b>
+          <b>{item.rank ?? '—'}</b>
         </div>
       </div>
       {awards.length ? (
@@ -152,10 +140,10 @@ export default function ComparePage() {
   const { t } = useLanguage();
   const [params] = useSearchParams();
   const type = params.get('type') || 'players';
-  const rows = getRankings(type);
   const incoming = params.get('id');
-  const [leftId, setLeftId] = useState(incoming || rows[0].id);
-  const [rightId, setRightId] = useState(rows.find((row) => row.id !== (incoming || rows[0].id))?.id || rows[1].id);
+  const [rows, setRows] = useState([]);
+  const [leftId, setLeftId] = useState(incoming || '');
+  const [rightId, setRightId] = useState('');
   const [extraId, setExtraId] = useState('');
   const [showExtra, setShowExtra] = useState(false);
   const [picker, setPicker] = useState(() => {
@@ -167,23 +155,65 @@ export default function ComparePage() {
     return side === 'left' || side === 'right' ? side : null;
   });
 
-  const left = enrich(getRankingItem(type, leftId) || rows[0]);
-  const right = enrich(getRankingItem(type, rightId) || rows[1]);
-  const extra = extraId ? enrich(getRankingItem(type, extraId)) : null;
+  useEffect(() => {
+    let cancel = false;
+
+    getRatings(type, 1, '', 50)
+      .then((body) => {
+        if (cancel) {
+          return;
+        }
+
+        const list = body?.data || [];
+
+        setRows(list);
+        setLeftId((current) => list.some((row) => row.id === current) ? current : (list[0]?.id || ''));
+        setRightId((current) => {
+          if (list.some((row) => row.id === current) && current !== (incoming || list[0]?.id)) {
+            return current;
+          }
+
+          return list.find((row) => row.id !== (incoming || list[0]?.id))?.id || '';
+        });
+      })
+      .catch(() => {
+        if (!cancel) {
+          setRows([]);
+        }
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [type, incoming]);
+
+  const left = enrich(rows.find((row) => row.id === leftId) || rows[0]);
+  const right = enrich(rows.find((row) => row.id === rightId) || rows[1]);
+  const extra = extraId ? enrich(rows.find((row) => row.id === extraId)) : null;
   const selected = useMemo(() => [left, right, extra].filter(Boolean), [left, right, extra]);
-  const eloGap = Math.round((left.eloNum || 0) - (right.eloNum || 0));
+  const eloGap = Math.round((left?.eloNum || 0) - (right?.eloNum || 0));
   const leader = eloGap >= 0 ? left : right;
-  const seasonMetrics = [
+  const seasonMetrics = left && right ? [
     [left.goals, right.goals],
     [left.assists, right.assists],
-    [left.matches, right.matches],
-    [left.dribbleNum, right.dribbleNum]
-  ];
+    [left.matches, right.matches]
+  ].filter((pair) => pair.every((value) => value != null)) : [];
   const seasonWins = seasonMetrics.filter(([a, b]) => (eloGap >= 0 ? a > b : b > a)).length;
   const seasonTotal = seasonMetrics.length;
 
   function photoOf(row) {
-    return PORTRAITS[(row.rank - 1) % PORTRAITS.length];
+    return row.photo || PORTRAITS[(row.rank - 1) % PORTRAITS.length];
+  }
+
+  if (!left || !right) {
+    return (
+      <div className="page">
+        <div className="wrap">
+          <p>Loading comparison…</p>
+        </div>
+        <SiteFooter />
+      </div>
+    );
   }
 
   function pickPlayer(id) {
@@ -356,7 +386,7 @@ export default function ComparePage() {
           <LineChart
             series={selected.map((item, index) => ({
               name: item.name,
-              points: item.timeline,
+              points: item.timeline?.length > 1 ? item.timeline : [item.eloNum, item.peakEloNum || item.eloNum],
               color: COLORS[index]
             }))}
             years={['2004', '2008', '2012', '2016', '2020', '2024']}

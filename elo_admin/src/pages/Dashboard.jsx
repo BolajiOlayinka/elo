@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Drawer } from '../components/Drawer.jsx';
 import {
@@ -9,7 +9,9 @@ import {
   TRAFFIC,
   USER_RANGES
 } from '../data/analytics.js';
+import { loadEssays } from '../data/analysis.js';
 import { loadComments } from '../data/comments.js';
+import { debateCounts, loadDebate } from '../data/debate.js';
 import { STATS, USERS } from '../data/demo.js';
 import { loadPosts } from '../data/posts.js';
 
@@ -167,10 +169,23 @@ export default function Dashboard() {
   const blogSlice = BLOG_RANGES[range];
   const posts = loadPosts();
   const comments = loadComments();
-  const analysisCount = BLOG_STATS.essays + posts.length;
-  const commentCount = comments.length + BLOG_STATS.perPost
-    .filter((row) => row.kind === 'analysis')
-    .reduce((sum, row) => sum + row.comments, 0);
+  const [essays, setEssays] = useState([]);
+  const [debate, setDebate] = useState([]);
+
+  useEffect(() => {
+    Promise.all([loadEssays(), loadDebate()])
+      .then(([nextEssays, nextDebate]) => {
+        setEssays(nextEssays);
+        setDebate(nextDebate);
+      })
+      .catch(() => {
+        setEssays([]);
+        setDebate([]);
+      });
+  }, []);
+
+  const analysisCount = essays.length + posts.length;
+  const commentCount = comments.length + debate.length;
 
   const ingest = useMemo(() => [
     { key: 'players', label: 'Players', value: STATS.players },
@@ -206,7 +221,7 @@ export default function Dashboard() {
         <StatCard
           label="Blog & Analysis"
           value={analysisCount}
-          note={`${posts.length} posts · ${BLOG_STATS.essays} essays · ${commentCount} comments`}
+          note={`${essays.length} analysis posts · ${commentCount} comments`}
           onMore={() => setDrawer('blog')}
         />
       </div>
@@ -349,9 +364,9 @@ export default function Dashboard() {
       >
         <div className="drawer-cards">
           <article className="stat-card">
-            <p>Analysis essays</p>
-            <strong>{blogSlice.essays}</strong>
-            <span>Published on the magazine</span>
+            <p>Analysis posts</p>
+            <strong>{essays.length}</strong>
+            <span>{essays.filter((row) => row.status === 'published').length} published on the magazine</span>
           </article>
           <article className="stat-card">
             <p>Blog posts</p>
@@ -365,23 +380,35 @@ export default function Dashboard() {
           </article>
           <article className="stat-card">
             <p>Pending</p>
-            <strong>{blogSlice.pending}</strong>
+            <strong>{debateCounts(debate).pending + comments.filter((row) => row.status === 'pending').length}</strong>
             <span>Waiting in moderation</span>
           </article>
         </div>
         <h3 className="drawer-h">Comments by piece</h3>
         <ul className="rank-list">
-          {BLOG_STATS.perPost.map((row) => (
-            <li key={row.title}>
-              <div>
-                <strong>{row.title}</strong>
-                <span>{row.kind === 'analysis' ? 'Analysis' : 'Blog'}</span>
-              </div>
-              <em>{row.comments}</em>
-            </li>
-          ))}
+          {[
+            ...essays.map((essay) => ({
+              title: essay.cardTitle || essay.title,
+              comments: debate.filter((row) => row.essayId === essay.id).length,
+              kind: 'analysis'
+            })),
+            ...BLOG_STATS.perPost.filter((row) => row.kind !== 'analysis')
+          ]
+            .sort((left, right) => right.comments - left.comments)
+            .map((row) => (
+              <li key={row.title}>
+                <div>
+                  <strong>{row.title}</strong>
+                  <span>{row.kind === 'analysis' ? 'Analysis' : 'Blog'}</span>
+                </div>
+                <em>{row.comments}</em>
+              </li>
+            ))}
         </ul>
-        <Link className="btn ghost" to="/blog/comments" onClick={() => setDrawer(null)}>Open moderation</Link>
+        <div className="form-actions">
+          <Link className="btn ghost" to="/analysis" onClick={() => setDrawer(null)}>Open Analysis posts</Link>
+          <Link className="btn ghost" to="/analysis/comments" onClick={() => setDrawer(null)}>Comments</Link>
+        </div>
       </Drawer>
 
       <Drawer

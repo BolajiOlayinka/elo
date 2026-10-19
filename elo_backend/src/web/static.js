@@ -47,7 +47,12 @@ function mountWeb(app) {
             return;
         }
 
-        if (req.path.startsWith('/api') || req.path.startsWith('/admin')) {
+        if (
+            req.path.startsWith('/api')
+            || req.path.startsWith('/admin')
+            || req.path.startsWith('/uploads')
+            || req.path.startsWith('/media')
+        ) {
             next();
 
             return;

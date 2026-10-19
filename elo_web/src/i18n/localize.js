@@ -1,3 +1,28 @@
+import { bodyToMarkdown } from '../data/analysis.js';
+
+function localizeBody(article, t) {
+  const parts = [];
+
+  for (let index = 0; index < 12; index += 1) {
+    const heading = t(`essay.${article.id}.h${index}`, '');
+    const text = t(`essay.${article.id}.p${index}`, '');
+
+    if (!heading && !text) {
+      break;
+    }
+
+    if (heading) {
+      parts.push(`## ${heading}`);
+    }
+
+    if (text) {
+      parts.push(text);
+    }
+  }
+
+  return parts.length ? parts.join('\n\n') : bodyToMarkdown(article.body);
+}
+
 export function localizeArticle(article, t) {
   if (!article) {
     return article;
@@ -9,12 +34,8 @@ export function localizeArticle(article, t) {
     cardTitle: t(`essay.${article.id}.cardTitle`, article.cardTitle || article.title),
     excerpt: t(`essay.${article.id}.excerpt`, article.excerpt),
     categoryLabel: t(`analysis.cat.${article.category}`, article.categoryLabel),
-    body: (article.body || []).map((block, index) => ({
-      ...block,
-      heading: t(`essay.${article.id}.h${index}`, block.heading),
-      text: t(`essay.${article.id}.p${index}`, block.text)
-    })),
-    metrics: (article.metrics || []).map((metric) => ({
+    body: localizeBody(article, t),
+    metrics: (Array.isArray(article.metrics) ? article.metrics : []).map((metric) => ({
       ...metric,
       label: t(`metric.${metric.id}`, metric.label)
     }))

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" fill="none">
+  <rect width="640" height="480" fill="#0B141C"/>
+  <rect x="24" y="24" width="592" height="432" rx="14" fill="#131D27" stroke="#285051"/>
+  <path d="M320 48v384M24 240h592" stroke="#285051"/>
+  <circle cx="320" cy="240" r="72" fill="#222A1E" stroke="#BCF766" stroke-width="10"/>
+  <text x="48" y="80" fill="#BCF766" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="600">Essay</text>
+</svg>

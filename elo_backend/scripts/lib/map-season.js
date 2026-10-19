@@ -18,8 +18,11 @@ const TEAM_STAT_MAP = {
     'Goalkeeper Saves': 'goalkeeper_saves',
     'Total passes': 'passes_total',
     'Passes accurate': 'passes_accurate',
-    'Passes %': 'passes_accuracy'
+    'Passes %': 'passes_accuracy',
+    expected_goals: 'expected_goals'
 };
+
+const DECIMAL_TEAM_STATS = new Set(['expected_goals']);
 
 function mapVenues(teamRows, fixtureRows, countryByName) {
     const now = new Date();
@@ -367,6 +370,7 @@ function collectFromMatchPlayers(payload, matchId, players) {
                 shots_total: toInt(shots.total),
                 shots_on: toInt(shots.on),
                 goals: toInt(goals.total),
+                own_goals: null,
                 goals_conceded: toInt(goals.conceded),
                 assists: toInt(goals.assists),
                 saves: toInt(goals.saves),
@@ -415,7 +419,7 @@ function collectFromTeamStats(payload, matchId) {
             const column = TEAM_STAT_MAP[stat.type];
 
             if (column) {
-                mapped[column] = toInt(stat.value);
+                mapped[column] = DECIMAL_TEAM_STATS.has(column) ? toDecimal(stat.value) : toInt(stat.value);
             } else if (stat.type) {
                 mapped.extras[stat.type] = stat.value;
             }
@@ -429,6 +433,180 @@ function collectFromTeamStats(payload, matchId) {
     }
 
     return rows;
+}
+
+/**
+ * Own goals: API-Football credits the event `team` to the side that benefits and
+ * `player` to the scorer, so match on (match, player) only. Sets 0 for every player
+ * with a stats row in a match that has events, null where events are absent.
+ */
+function applyOwnGoals(playerStatRows, eventRows, matchesWithEvents) {
+    const counts = new Map();
+
+    for (const item of eventRows) {
+        if (item.type === 'Goal' && item.detail === 'Own Goal' && item.player_id) {
+            const key = `${item.match_id}:${item.player_id}`;
+
+            counts.set(key, (counts.get(key) || 0) + 1);
+        }
+    }
+
+    for (const row of playerStatRows) {
+        if (!matchesWithEvents.has(row.match_id)) {
+            continue;
+        }
+
+        row.own_goals = counts.get(`${row.match_id}:${row.player_id}`) || 0;
+    }
+}
+
+/**
+ * Home grounds per team for one season: the venue registered in the catalog (which
+ * reflects the team's *current* stadium) plus the venue used for the majority of its
+ * home fixtures that season (at least 2 and more than half). Covers stadium moves
+ * without turning tournament venues into "home" grounds.
+ */
+/**
+ * Many fixtures carry a venue name but no venue id, so grounds are keyed by both.
+ */
+function venueKeys(venueId, venueName) {
+    const keys = [];
+
+    if (venueId) {
+        keys.push(`id:${venueId}`);
+    }
+
+    const normalised = String(venueName || '').trim().toLowerCase();
+
+    if (normalised) {
+        keys.push(`name:${normalised}`);
+    }
+
+    return keys;
+}
+
+/**
+ * `teamPayloadRows` is the raw /teams response (team + venue), `matches` the mapped rows.
+ */
+function homeVenuesByTeam(matches, teamPayloadRows) {
+    const registered = new Map();
+    const byTeam = new Map();
+    const homeGames = new Map();
+    const keyCounts = new Map();
+    const hostsPerKey = new Map();
+
+    for (const row of teamPayloadRows || []) {
+        const teamId = row.team?.id;
+        const keys = venueKeys(row.venue?.id, row.venue?.name);
+
+        if (teamId && keys.length) {
+            registered.set(teamId, new Set(keys));
+        }
+    }
+
+    for (const match of matches) {
+        const keys = venueKeys(match.venue_id, match.venue_name);
+
+        if (!keys.length) {
+            continue;
+        }
+
+        homeGames.set(match.home_team_id, (homeGames.get(match.home_team_id) || 0) + 1);
+
+        const perTeam = keyCounts.get(match.home_team_id) || new Map();
+
+        for (const key of keys) {
+            perTeam.set(key, (perTeam.get(key) || 0) + 1);
+
+            const hosts = hostsPerKey.get(key) || new Set();
+
+            hosts.add(match.home_team_id);
+            hostsPerKey.set(key, hosts);
+        }
+
+        keyCounts.set(match.home_team_id, perTeam);
+    }
+
+    for (const [teamId, perTeam] of keyCounts) {
+        const total = homeGames.get(teamId) || 0;
+        const [bestKey, uses] = [...perTeam.entries()].sort((left, right) => right[1] - left[1])[0];
+
+        if (uses >= 2 && uses * 2 > total) {
+            const set = byTeam.get(teamId) || new Set();
+
+            set.add(bestKey);
+
+            // Carry the sibling key (id <-> name) for the same ground when both are seen.
+            for (const [key, count] of perTeam) {
+                if (count === uses && key !== bestKey) {
+                    set.add(key);
+                }
+            }
+
+            byTeam.set(teamId, set);
+        }
+    }
+
+    // A ground used as "home" by three or more different teams in one season is a
+    // tournament / final venue (Wembley, World Cup stadiums), not anyone's home.
+    const shared = new Set(
+        [...hostsPerKey.entries()]
+            .filter(([, hosts]) => hosts.size >= 3)
+            .map(([key]) => key)
+    );
+
+    return { registered, byTeam, shared };
+}
+
+/**
+ * Neutral venue, in precedence order:
+ *   registered ground of the home team  -> false
+ *   shared tournament ground            -> true
+ *   this season's usual ground          -> false
+ *   some ground known, this one is not  -> true
+ *   nothing known                       -> null
+ */
+function neutralFlag(match, homeVenues) {
+    const keys = venueKeys(match.venue_id, match.venue_name);
+
+    if (!keys.length) {
+        return null;
+    }
+
+    const registered = homeVenues.registered.get(match.home_team_id);
+    const usual = homeVenues.byTeam.get(match.home_team_id);
+
+    if (registered && keys.some((key) => registered.has(key))) {
+        return false;
+    }
+
+    if (keys.some((key) => homeVenues.shared.has(key))) {
+        return true;
+    }
+
+    if (usual && keys.some((key) => usual.has(key))) {
+        return false;
+    }
+
+    if ((!registered || registered.size === 0) && (!usual || usual.size === 0)) {
+        return null;
+    }
+
+    return true;
+}
+
+function coverageFlags(payloads) {
+    const hasRows = (payload) => Array.isArray(payload?.response) && payload.response.length > 0;
+    const playersPayload = payloads.players;
+    const hasPlayerStats = hasRows(playersPayload)
+        && playersPayload.response.some((side) => Array.isArray(side.players) && side.players.length > 0);
+
+    return {
+        has_events: hasRows(payloads.events),
+        has_lineups: hasRows(payloads.lineups),
+        has_team_stats: hasRows(payloads.statistics),
+        has_player_stats: hasPlayerStats
+    };
 }
 
 function rememberCoach(coaches, coach, now) {
@@ -576,6 +754,10 @@ module.exports = {
     collectFromMatchPlayers,
     collectFromTeamStats,
     collectCoachesFromFiles,
+    applyOwnGoals,
+    homeVenuesByTeam,
+    neutralFlag,
+    coverageFlags,
     mapStandings,
     playersToRows,
     coachesToRows,

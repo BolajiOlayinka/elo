@@ -15,9 +15,9 @@ export default function Login() {
     return <Navigate to={from} replace />;
   }
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    const result = login(email, password);
+    const result = await login(email, password);
 
     if (!result.ok) {
       setError(result.message);
@@ -39,7 +39,7 @@ export default function Login() {
           </div>
         </div>
         <h1>Sign in</h1>
-        <p className="muted">Staff only. This demo stores the session in your browser.</p>
+        <p className="muted">Staff only. Sign-in asks the API for a token, then keeps the session in your browser.</p>
         <label>
           Email
           <input

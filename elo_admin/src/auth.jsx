@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import { STAFF } from './data/demo.js';
+import { api, setStaffToken } from './lib/api.js';
 
 const KEY = 'elo-admin-auth-v1';
 const DEMO_PASSWORD = 'elostats';
@@ -14,6 +15,10 @@ function readSession() {
 
     const parsed = JSON.parse(raw);
 
+    if (parsed?.token) {
+      setStaffToken(parsed.token);
+    }
+
     return parsed?.email ? parsed : null;
   } catch {
     return null;
@@ -26,7 +31,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(readSession);
   const value = useMemo(() => ({
     session,
-    login(email, password) {
+    async login(email, password) {
       const staff = STAFF.find((row) => row.email.toLowerCase() === email.trim().toLowerCase());
 
       if (!staff) {
@@ -48,6 +53,18 @@ export function AuthProvider({ children }) {
         role: staff.role
       };
 
+      try {
+        const payload = await api('/auth/staff-login', {
+          method: 'POST',
+          auth: false,
+          body: { email: staff.email, password }
+        });
+        next.token = payload.data.token;
+        setStaffToken(payload.data.token);
+      } catch {
+        setStaffToken(null);
+      }
+
       localStorage.setItem(KEY, JSON.stringify(next));
       setSession(next);
 
@@ -55,6 +72,7 @@ export function AuthProvider({ children }) {
     },
     logout() {
       localStorage.removeItem(KEY);
+      setStaffToken(null);
       setSession(null);
     }
   }), [session]);

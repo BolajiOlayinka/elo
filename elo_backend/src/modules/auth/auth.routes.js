@@ -7,6 +7,7 @@ const { forgot_password_schema } = require('./dto/forgot-password.dto');
 const Validator = require('../../shared/middleware/validation');
 const { verify_email_schema } = require('./dto/verify-email.dto');
 const { reset_password_schema } = require('./dto/reset-password.dto');
+const { staff_login_schema } = require('../analysis/dto/analysis.dto');
 const AuthMiddleware = require('../../shared/middleware/auth');
 
 const router = express.Router();
@@ -14,6 +15,8 @@ const router = express.Router();
 router.post('/signup', Validator.middleware({ body: signup_schema }), AuthController.signup);
 
 router.post('/login', Validator.middleware({ body: login_schema }), AuthController.login);
+
+router.post('/staff-login', Validator.middleware({ body: staff_login_schema }), AuthController.staffLogin);
 
 router.post('/verify-email', Validator.middleware({ body: verify_email_schema }), AuthController.verifyEmail);
 

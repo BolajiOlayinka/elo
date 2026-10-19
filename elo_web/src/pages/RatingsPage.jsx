@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CompareIcon, EyeIcon, StarIcon } from '../components/Icons.jsx';
 import { Avatar, Flag } from '../components/EntityMarks.jsx';
 import { RatingsHero } from '../components/RatingsHero.jsx';
-import { getRankings, PAGE_SIZE, RATING_TABS } from '../data/rankings.js';
+import { getRatings } from '../data/api.js';
+import { RATING_TABS } from '../data/rankings.js';
 import { SiteFooter } from '../components/SiteFooter.jsx';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 
@@ -11,9 +12,36 @@ export default function RatingsPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState('players');
   const [page, setPage] = useState(1);
-  const rows = getRankings(tab);
-  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
-  const visible = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [rows, setRows] = useState([]);
+  const [pageCount, setPageCount] = useState(1);
+  const [status, setStatus] = useState('loading');
+
+  useEffect(() => {
+    let cancel = false;
+
+    setStatus('loading');
+    getRatings(tab, page)
+      .then((body) => {
+        if (cancel) {
+          return;
+        }
+
+        setRows(body?.data || []);
+        setPageCount(body?.meta?.pages || 1);
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (!cancel) {
+          setStatus('error');
+        }
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [tab, page]);
+
+  const visible = rows;
 
   return (
     <div className="page ratings-page">
@@ -61,7 +89,16 @@ export default function RatingsPage() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((row) => (
+              {status === 'loading' ? (
+                <tr><td colSpan={7}>Loading ratings…</td></tr>
+              ) : null}
+              {status === 'error' ? (
+                <tr><td colSpan={7}>Ratings are unavailable. Start the API and try again.</td></tr>
+              ) : null}
+              {status === 'ready' && visible.length === 0 ? (
+                <tr><td colSpan={7}>No ratings in this board yet.</td></tr>
+              ) : null}
+              {status === 'ready' ? visible.map((row) => (
                 <tr key={row.id}>
                   <td>{String(row.rank).padStart(2, '0')}</td>
                   <td>
@@ -72,13 +109,13 @@ export default function RatingsPage() {
                   </td>
                   <td>
                     <div className="entity-cell">
-                      <Flag code={row.flag} />
-                      {row.place}
+                      <Flag code={row.flag || '—'} />
+                      {row.place || '—'}
                     </div>
                   </td>
                   <td>{row.career}</td>
                   <td>{row.peak}</td>
-                  <td>{row.era}</td>
+                  <td>{row.era || '—'}</td>
                   <td>
                     <div className="ratings-actions">
                       <Link className="table-btn" to={`/profile/${row.type}/${row.id}`}>
@@ -92,7 +129,7 @@ export default function RatingsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )) : null}
             </tbody>
           </table>
 
@@ -100,16 +137,7 @@ export default function RatingsPage() {
             <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>
               {t('common.previous')}
             </button>
-            {Array.from({ length: pageCount }, (_, index) => (
-              <button
-                key={index + 1}
-                type="button"
-                className={page === index + 1 ? 'is-active' : ''}
-                onClick={() => setPage(index + 1)}
-              >
-                {index + 1}
-              </button>
-            ))}
+            <span>{page} / {pageCount}</span>
             <button type="button" disabled={page === pageCount} onClick={() => setPage(page + 1)}>
               {t('common.next')}
             </button>

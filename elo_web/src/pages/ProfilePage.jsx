@@ -1,14 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import bellingham from '../assets/players/jude-bellingham.webp';
-import haaland from '../assets/players/erling-haaland.webp';
-import henry from '../assets/players/henry.webp';
-import mbappe from '../assets/players/kylian-mbappe.webp';
-import messi from '../assets/players/lionel-messi.webp';
-import neymar from '../assets/players/neymar-jr.webp';
-import rashford from '../assets/players/marcus-rashford.webp';
-import ronaldo from '../assets/players/cristiano-ronaldo.webp';
-import vinicius from '../assets/players/vinicius-jr.webp';
 import footballLegends from '../assets/football_legends.png';
 import {
   ArrowUpRight,
@@ -17,18 +8,15 @@ import {
   CompareIcon,
   GlobeIcon,
   InfoIcon,
-  MedalIcon,
   PeakIcon,
   TrophyIcon,
   UserPlusIcon
 } from '../components/Icons.jsx';
 import { Avatar } from '../components/EntityMarks.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
-import { getAwardImage } from '../data/awards.js';
-import { getRankingItem, getRankings, RATING_TABS } from '../data/rankings.js';
+import { getProfile } from '../data/api.js';
+import { RATING_TABS } from '../data/rankings.js';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
-
-const PORTRAITS = [rashford, vinicius, mbappe, bellingham, haaland, messi, ronaldo, neymar, henry];
 
 const FLAG_FILES = import.meta.glob('../assets/flags/*.svg', {
   eager: true,
@@ -38,54 +26,6 @@ const FLAG_FILES = import.meta.glob('../assets/flags/*.svg', {
 function flagSrc(code) {
   const id = String(code || '').toLowerCase() === 'en' ? 'gb' : String(code || '').toLowerCase();
   return FLAG_FILES[`../assets/flags/${id}.svg`] || null;
-}
-
-function jitter(index, salt) {
-  return ((index * 47 + salt * 13) % 97) / 97;
-}
-
-function enrich(item) {
-  const n = item.rank;
-  const ovr = Math.max(68, 93 - Math.floor(n / 3));
-  const tech = {
-    ovr,
-    pac: Math.max(62, ovr - 2 + Math.round(jitter(n, 1) * 6)),
-    sho: Math.max(58, ovr - 18 + Math.round(jitter(n, 2) * 8)),
-    pas: Math.max(64, ovr - 10 + Math.round(jitter(n, 3) * 6)),
-    dri: Math.max(66, ovr - 6 + Math.round(jitter(n, 4) * 5)),
-    def: Math.max(60, ovr - 12 + Math.round(jitter(n, 5) * 8)),
-    phy: Math.max(68, ovr - 8 + Math.round(jitter(n, 6) * 6)),
-    acceleration: Math.max(70, ovr - 1 + Math.round(jitter(n, 7) * 4)),
-    crossing: Math.max(64, ovr - 9 + Math.round(jitter(n, 8) * 6)),
-    tackle: Math.max(62, ovr - 11 + Math.round(jitter(n, 9) * 7)),
-    sprint: Math.max(68, ovr - 3 + Math.round(jitter(n, 12) * 5)),
-    vision: Math.max(63, ovr - 10 + Math.round(jitter(n, 13) * 6)),
-    strength: Math.max(66, ovr - 7 + Math.round(jitter(n, 14) * 5))
-  };
-
-  return {
-    ...item,
-    photo: PORTRAITS[(n - 1) % PORTRAITS.length],
-    market: `€${Math.max(4, 48 - n)}M`,
-    universal: Math.max(62, 90 - Math.floor(n / 2)),
-    elitePct: Math.max(1, Math.min(18, 1 + Math.floor(n / 3))),
-    seasonDelta: Math.round(80 + jitter(n, 10) * 90),
-    eraDelta: (3.2 + jitter(n, 11) * 1.8).toFixed(1),
-    tech,
-    perf: {
-      defensive: (980 - n * 3).toLocaleString(),
-      tackles: (91.1 - n * 0.12).toFixed(1),
-      interceptions: (85.5 - n * 0.08).toFixed(0),
-      clearance: item.career,
-      recoveries: (980 - n * 2).toLocaleString(),
-      passes: (91.4 - n * 0.09).toFixed(1),
-      fouls: String(Math.max(8, 18 - (n % 7))),
-      careerDef: (11920 - n * 40).toLocaleString(),
-      attacking: (980 - n * 4).toLocaleString(),
-      positioning: (91.4 - n * 0.07).toFixed(1),
-      duels: (85.5 - n * 0.1).toFixed(0)
-    }
-  };
 }
 
 function CountryFlag({ code }) {
@@ -108,18 +48,6 @@ function StatOrb({ value, label, tone = 'lime' }) {
   );
 }
 
-function TechBar({ label, value }) {
-  return (
-    <div className="player-tech-bar">
-      <div>
-        <span>{label}</span>
-        <em>{value}</em>
-      </div>
-      <i><b style={{ width: `${value}%` }} /></i>
-    </div>
-  );
-}
-
 function MetricTile({ label, value }) {
   return (
     <div className="player-metric">
@@ -133,22 +61,36 @@ export default function ProfilePage() {
   const { t } = useLanguage();
   const { type, id } = useParams();
   const [following, setFollowing] = useState(false);
-  const raw = getRankingItem(type, id);
+  const [item, setItem] = useState(null);
+  const [status, setStatus] = useState('loading');
   const tab = RATING_TABS.find((entry) => entry.id === type);
-  const item = raw ? enrich(raw) : null;
   const noun = t(`dossier.noun.${tab?.noun || 'Player'}`);
-  const rivals = item
-    ? getRankings(item.type).filter((row) => row.id !== item.id).slice(0, 3)
-    : [];
-  const techKeys = [
-    ['ovr', 'dossier.ovr'],
-    ['pac', 'dossier.pac'],
-    ['sho', 'dossier.sho'],
-    ['pas', 'dossier.pas'],
-    ['dri', 'dossier.dri'],
-    ['def', 'dossier.def'],
-    ['phy', 'dossier.phy']
-  ];
+  const rivals = item?.rivals || [];
+  const latest = item?.seasons?.[item.seasons.length - 1];
+
+  useEffect(() => {
+    let cancel = false;
+
+    setStatus('loading');
+    getProfile(type, id)
+      .then((data) => {
+        if (cancel) {
+          return;
+        }
+
+        setItem(data);
+        setStatus(data ? 'ready' : 'missing');
+      })
+      .catch(() => {
+        if (!cancel) {
+          setStatus('error');
+        }
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [type, id]);
 
   return (
     <div className="page profile-page">
@@ -169,13 +111,11 @@ export default function ProfilePage() {
                     <CountryFlag code={item.flag} />
                   </p>
                   <p className="player-vitals">
-                    {t('dossier.age')}: {item.age}
+                    {t('dossier.age')}: {item.age ?? '—'}
                     <span>·</span>
-                    {t('dossier.height')}: {item.height}
+                    {t('dossier.height')}: {item.height || '—'}
                     <span>·</span>
-                    {t('dossier.footLabel')}: {item.foot}
-                    <span>·</span>
-                    {t('dossier.market')}: {item.market}
+                    Rank: {item.rank ?? '—'}
                   </p>
                 </div>
               </div>
@@ -199,22 +139,22 @@ export default function ProfilePage() {
               <div>
                 <span><ChartIcon size={14} />{t('dossier.careerPoints')}</span>
                 <strong>{item.career}</strong>
-                <em>{t('dossier.ptsSeason', { n: item.seasonDelta })}</em>
+                <em>{item.matches ?? '—'} matches</em>
               </div>
               <div>
                 <span><PeakIcon size={14} />{t('dossier.peakSeason')}</span>
                 <strong>{item.peak}</strong>
-                <em>{t('dossier.ptsEra', { n: item.eraDelta })}</em>
+                <em>{latest ? latest.year : '—'}</em>
               </div>
               <div>
                 <span><BoltIcon size={14} />{t('dossier.currentElo')}</span>
                 <strong>{item.elo}</strong>
-                <em>{t('dossier.lastTen')}</em>
+                <em>{item.role}</em>
               </div>
               <div>
                 <span><GlobeIcon size={14} />{t('dossier.universal')}</span>
-                <strong>{item.universal}</strong>
-                <em>{t('dossier.eliteTier', { n: item.elitePct })}</em>
+                <strong>{item.goals ?? '—'}</strong>
+                <em>{item.assists ?? '—'} assists</em>
               </div>
             </section>
 
@@ -225,44 +165,27 @@ export default function ProfilePage() {
                   <Link to="/ratings">{t('dossier.fullReport')} →</Link>
                 </div>
                 <div className="player-orbs">
-                  {techKeys.map(([key, label], index) => (
-                    <StatOrb
-                      key={key}
-                      value={item.tech[key]}
-                      label={t(label)}
-                      tone={index < 2 ? 'lime' : index < 5 ? 'mint' : 'green'}
-                    />
-                  ))}
-                </div>
-                <div className="player-tech-bars">
-                  <TechBar label={t('dossier.acceleration')} value={item.tech.acceleration} />
-                  <TechBar label={t('dossier.crossing')} value={item.tech.crossing} />
-                  <TechBar label={t('dossier.tackle')} value={item.tech.tackle} />
-                  <TechBar label={t('dossier.sprint')} value={item.tech.sprint} />
-                  <TechBar label={t('dossier.vision')} value={item.tech.vision} />
-                  <TechBar label={t('dossier.strength')} value={item.tech.strength} />
+                  <StatOrb value={item.goals ?? '—'} label="Goals" tone="lime" />
+                  <StatOrb value={item.assists ?? '—'} label="Assists" tone="lime" />
+                  <StatOrb value={item.matches ?? '—'} label="Matches" tone="mint" />
+                  <StatOrb value={latest?.minutes ?? '—'} label="Latest minutes" tone="green" />
                 </div>
               </article>
               <article>
                 <div className="player-panel-head">
                   <h2>
                     <TrophyIcon />
-                    {t('dossier.accolades')}
+                    Seasons
                   </h2>
-                  <button type="button">{t('dossier.seeMore')}</button>
                 </div>
                 <ul className="player-awards">
-                  {item.accolades.map((award) => {
-                    const image = getAwardImage(award.name);
-
-                    return (
-                      <li key={award.name}>
-                        {image ? <img src={image} alt="" /> : <MedalIcon />}
-                        <strong>{award.name}</strong>
-                        <span>×{award.count || 1}</span>
-                      </li>
-                    );
-                  })}
+                  {(item.seasons || []).slice(-6).reverse().map((season) => (
+                    <li key={`${season.year}-${season.club}`}>
+                      <strong>{season.year}</strong>
+                      <span>{season.club}</span>
+                      <span>{season.elo}</span>
+                    </li>
+                  ))}
                 </ul>
               </article>
             </section>
@@ -279,17 +202,12 @@ export default function ProfilePage() {
                   </label>
                 </div>
                 <div className="player-metrics">
-                  <MetricTile label={t('dossier.defActions')} value={item.perf.defensive} />
-                  <MetricTile label={t('dossier.tacklesWon')} value={item.perf.tackles} />
-                  <MetricTile label={t('dossier.interceptions')} value={item.perf.interceptions} />
-                  <MetricTile label={t('dossier.clearance')} value={item.perf.clearance} />
-                  <MetricTile label={t('dossier.recoveries')} value={item.perf.recoveries} />
-                  <MetricTile label={t('dossier.passCompleted')} value={item.perf.passes} />
-                  <MetricTile label={t('dossier.fouls')} value={item.perf.fouls} />
-                  <MetricTile label={t('dossier.careerDef')} value={item.perf.careerDef} />
-                  <MetricTile label={t('dossier.attacking')} value={item.perf.attacking} />
-                  <MetricTile label={t('dossier.positioning')} value={item.perf.positioning} />
-                  <MetricTile label={t('dossier.duels')} value={item.perf.duels} />
+                  <MetricTile label="Club" value={latest?.club || item.club || '—'} />
+                  <MetricTile label="Goals" value={latest?.goals ?? '—'} />
+                  <MetricTile label="Assists" value={latest?.assists ?? '—'} />
+                  <MetricTile label="Minutes" value={latest?.minutes ?? '—'} />
+                  <MetricTile label="Season Elo" value={latest?.elo ?? '—'} />
+                  <MetricTile label="Peak Elo" value={item.peak} />
                 </div>
               </article>
 
@@ -341,7 +259,7 @@ export default function ProfilePage() {
       ) : (
         <div className="wrap">
           <section className="profile-card">
-            <h1>{t('dossier.notFound')}</h1>
+            <h1>{status === 'loading' ? 'Loading profile…' : status === 'error' ? 'Profile unavailable.' : t('dossier.notFound')}</h1>
             <Link className="btn btn-ghost btn-explore-profiles" to="/ratings">{t('dossier.backRatings')}</Link>
           </section>
         </div>

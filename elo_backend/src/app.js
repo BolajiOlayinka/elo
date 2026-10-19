@@ -1,15 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 const env = require('./config/env');
 const errorHandler = require('./shared/middleware/error-handler');
 const { mountAdmin, mountWeb } = require('./web/static');
+const { UPLOAD_DIR } = require('./modules/uploads/upload.service');
 
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/media', express.static(path.resolve(__dirname, '../public/media')));
 app.use(cors({
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'Accept'],
@@ -35,19 +39,16 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+app.use('/api/v1', require('./modules/football/routes'));
+
+const v1Router = require('./modules/router/v1.router');
+
+app.use('/api/v1', v1Router);
+
 if (env.REDIS_URL) {
-    const v1Router = require('./modules/router/v1.router');
     const bullBoardRouter = require('./infra/queue/bull-board');
 
-    app.use('/api/v1', v1Router);
     app.use('/admin/queues', bullBoardRouter);
-} else {
-    app.use('/api/v1', (req, res) => {
-        res.status(503).json({
-            error: true,
-            message: 'API is not configured on this dyno (REDIS_URL missing). The web app is still served.'
-        });
-    });
 }
 
 mountAdmin(app);

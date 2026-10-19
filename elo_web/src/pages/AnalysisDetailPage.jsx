@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { AnalysisDebate } from '../components/AnalysisDebate.jsx';
@@ -6,11 +6,12 @@ import { FilterIcon } from '../components/Icons.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
 import { addActivity } from '../data/account.js';
 import {
-  getAnalysisArticle,
-  getDiscussedArticles,
-  getRelatedArticles,
-  normalizeComment
+  fetchAnalysisArticle,
+  normalizeComment,
+  postAnalysisComment,
+  voteAnalysisComment
 } from '../data/analysis.js';
+import { markdownToHtml } from '../lib/markdown.js';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import { localizeArticle } from '../i18n/localize.js';
 
@@ -65,16 +66,46 @@ function ComparisonMetrics({ article }) {
 
 export default function AnalysisDetailPage() {
   const { slug } = useParams();
-  const article = getAnalysisArticle(slug);
+  const [payload, setPayload] = useState(null);
+  const [error, setError] = useState('');
+  const [ready, setReady] = useState(false);
 
-  if (!article) {
+  useEffect(() => {
+    setReady(false);
+    fetchAnalysisArticle(slug)
+      .then(setPayload)
+      .catch((err) => setError(err.message))
+      .finally(() => setReady(true));
+  }, [slug]);
+
+  if (!ready) {
+    return (
+      <div className="page analysis-page">
+        <section className="analysis-hero">
+          <div className="wrap">
+            <h1>Analysis</h1>
+            <p>Loading…</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (error || !payload?.article) {
     return <Navigate to="/analysis" replace />;
   }
 
-  return <AnalysisEssay key={article.slug} article={article} />;
+  return (
+    <AnalysisEssay
+      key={payload.article.slug}
+      article={payload.article}
+      related={payload.related}
+      discussed={payload.discussed}
+    />
+  );
 }
 
-function AnalysisEssay({ article }) {
+function AnalysisEssay({ article, related = [], discussed = [] }) {
   const { session } = useAuth();
   const { t } = useLanguage();
   const localized = localizeArticle(article, t);
@@ -84,9 +115,6 @@ function AnalysisEssay({ article }) {
   const [openReply, setOpenReply] = useState(null);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [visibleCount, setVisibleCount] = useState(2);
-
-  const discussed = getDiscussedArticles(article.slug, 3);
-  const related = getRelatedArticles(article.slug, 3);
   const visible = comments.slice(0, visibleCount);
   const hiddenCount = comments.length - visible.length;
   const argumentCount = article.arguments ?? comments.length;
@@ -113,6 +141,15 @@ function AnalysisEssay({ article }) {
     };
 
     setComments((current) => [entry, ...current]);
+    postAnalysisComment(article.slug, {
+      text,
+      stance: 'challenge',
+      name: entry.name,
+      initials: entry.initials,
+      email: session?.email
+    }).then((saved) => {
+      setComments((current) => current.map((row) => (row.id === entry.id ? saved : row)));
+    }).catch(() => {});
     addActivity(session?.email, {
       id: entry.id,
       kind: 'argument',
@@ -133,6 +170,9 @@ function AnalysisEssay({ article }) {
     const next = previous === direction ? null : direction;
 
     setVotes((current) => ({ ...current, [id]: next }));
+    if (next) {
+      voteAnalysisComment(id, next).catch(() => {});
+    }
     setComments((rows) => mapThread(rows, id, (row) => {
       let upvotes = row.upvotes;
       let downvotes = row.downvotes;
@@ -181,6 +221,19 @@ function AnalysisEssay({ article }) {
       ...row,
       replies: [...(row.replies || []), reply]
     })));
+    postAnalysisComment(article.slug, {
+      text,
+      stance: 'challenge',
+      name: reply.name,
+      initials: reply.initials,
+      email: session?.email,
+      parentId
+    }).then((saved) => {
+      setComments((rows) => mapThread(rows, parentId, (row) => ({
+        ...row,
+        replies: (row.replies || []).map((item) => (item.id === reply.id ? saved : item))
+      })));
+    }).catch(() => {});
     addActivity(session?.email, {
       id: reply.id,
       kind: 'reply',
@@ -223,7 +276,7 @@ function AnalysisEssay({ article }) {
                   <strong>{article.author.name}</strong>
                   <span>{article.publishedLabel}</span>
                 </div>
-                <span className="analysis-card-badge">{t(`analysis.cat.${article.category}`)}</span>
+                <span className="analysis-card-badge">{t(`analysis.cat.${article.category}`, article.categoryLabel)}</span>
               </div>
 
               <figure className="analysis-hero-figure">
@@ -232,12 +285,10 @@ function AnalysisEssay({ article }) {
 
               <ComparisonMetrics article={localized} />
 
-              {localized.body.map((block) => (
-                <section key={block.heading} className="analysis-block">
-                  <h2>{block.heading}</h2>
-                  <p>{block.text}</p>
-                </section>
-              ))}
+              <div
+                className="analysis-block analysis-body"
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(localized.body) }}
+              />
             </div>
 
             <AnalysisDebate
@@ -301,7 +352,7 @@ function AnalysisEssay({ article }) {
                   <li key={item.id}>
                     <div>
                       <Link to={`/analysis/${item.slug}`}>{localizeArticle(item, t).cardTitle}</Link>
-                      <p>{t(`analysis.cat.${item.category}`)} · {t('analysis.minRead', { n: item.readMinutes })}</p>
+                      <p>{t(`analysis.cat.${item.category}`, item.categoryLabel)} · {t('analysis.minRead', { n: item.readMinutes })}</p>
                     </div>
                   </li>
                 ))}

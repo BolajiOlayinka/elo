@@ -36,7 +36,7 @@ export default function BlogComments() {
       <div className="page-head">
         <div>
           <h1>Comments</h1>
-          <p>Moderate Analysis and blog replies from the public site. Pending items wait here before they go live.</p>
+          <p>Moderate blog replies. Analysis arguments live under Analysis → Debate.</p>
         </div>
         <span className="pill">{counts.pending} in the queue</span>
       </div>

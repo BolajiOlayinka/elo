@@ -3,9 +3,9 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import {
   IconBadge,
-  IconBlog,
   IconChevron,
   IconCog,
+  IconEssay,
   IconGrid,
   IconMenu,
   IconPoints,
@@ -17,15 +17,16 @@ const LINKS = [
   { to: '/', label: 'Dashboard', icon: IconGrid, end: true },
   { to: '/users', label: 'Users', icon: IconUsers },
   { to: '/points', label: 'Point settings', icon: IconPoints },
+  { to: '/directory', label: 'Ratings', icon: IconGrid },
   {
-    to: '/blog',
-    label: 'Blog',
-    icon: IconBlog,
+    to: '/analysis',
+    label: 'Analysis',
+    icon: IconEssay,
     children: [
-      { to: '/blog', label: 'Posts', end: true },
-      { to: '/blog/comments', label: 'Comments' },
-      { to: '/blog/categories', label: 'Categories' },
-      { to: '/blog/tags', label: 'Tags' }
+      { to: '/analysis', label: 'Posts', end: true },
+      { to: '/analysis/comments', label: 'Comments' },
+      { to: '/analysis/categories', label: 'Categories' },
+      { to: '/analysis/tags', label: 'Tags' }
     ]
   },
   { to: '/staffs', label: 'Staff', icon: IconBadge },

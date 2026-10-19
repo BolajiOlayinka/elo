@@ -15,6 +15,24 @@ class AuthMiddleware {
         next();
     }
 
+    static optional(req, res, next) {
+        const auth_header = req.headers.authorization;
+
+        if (!auth_header || !auth_header.startsWith('Bearer ')) {
+            next();
+
+            return;
+        }
+
+        try {
+            req.user = AuthService.verifyToken(auth_header.split(' ')[1]);
+        } catch {
+            req.user = undefined;
+        }
+
+        next();
+    }
+
     static restrictTo(...allowed_roles) {
         return (req, res, next) => {
             if (!req.user || !req.user.roles) {

@@ -21,6 +21,16 @@ class AuthController {
         });
     }
 
+    static async staffLogin(req, res) {
+        const result = await AuthService.staffLogin(req.body);
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            data: result
+        });
+    }
+
     static async verifyEmail(req, res) {
         await AuthService.verifyEmail(req.body.verification_code);
 

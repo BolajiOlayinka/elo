@@ -1,13 +1,84 @@
 import heroSrc from '../assets/blog_hero.png';
 import thumbSrc from '../assets/blog_thumbnail.png';
+import { api } from '../lib/api.js';
 
-export const ANALYSIS_CATEGORIES = [
-  { id: 'all', label: 'Analyze' },
-  { id: 'peak', label: 'Peak Seasons' },
-  { id: 'compare', label: 'Player Comparisons' },
-  { id: 'roles', label: 'Tactical roles' },
-  { id: 'notes', label: 'Ranking Notes' }
+export const ANALYSIS_CATEGORIES_KEY = 'elo-analysis-categories-v1';
+export const ANALYSIS_ESSAYS_KEY = 'elo-admin-analysis-essays-v3';
+
+export const ANALYSIS_CATEGORY_SEED = [
+  { id: 'peak', label: 'Peak Seasons', slug: 'peak', description: 'One season, one peak claim.' },
+  { id: 'compare', label: 'Player Comparisons', slug: 'compare', description: 'Head-to-head essays.' },
+  { id: 'roles', label: 'Tactical roles', slug: 'roles', description: 'Position-fair arguments.' },
+  { id: 'notes', label: 'Ranking Notes', slug: 'notes', description: 'Method and board notes.' }
 ];
+
+export function bodyToMarkdown(body) {
+  if (typeof body === 'string') {
+    return body;
+  }
+
+  return (Array.isArray(body) ? body : [])
+    .map((block) => {
+      const parts = [];
+
+      if (block?.heading) {
+        parts.push(`## ${block.heading}`);
+      }
+
+      if (block?.text) {
+        parts.push(block.text);
+      }
+
+      const src = block?.image?.file_url || (typeof block?.image === 'string' ? block.image : '');
+
+      if (src) {
+        parts.push(`![Image](${src})`);
+      }
+
+      return parts.join('\n\n');
+    })
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+function readJson(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function mediaSrc(value, fallback = '') {
+  if (!value) {
+    return fallback;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return value.file_url || fallback;
+}
+
+export function getAnalysisCategories() {
+  const stored = readJson(ANALYSIS_CATEGORIES_KEY) || ANALYSIS_CATEGORY_SEED;
+  const known = new Set(stored.map((row) => row.id));
+  const extras = getCatalog()
+    .filter((row) => row.category && !known.has(row.category))
+    .map((row) => ({
+      id: row.category,
+      label: row.categoryLabel || row.category,
+      slug: row.category
+    }));
+  const unique = extras.filter((row, index, list) => list.findIndex((item) => item.id === row.id) === index);
+
+  return [{ id: 'all', label: 'Analyze', slug: 'all' }, ...stored, ...unique];
+}
+
+export const ANALYSIS_CATEGORIES = ANALYSIS_CATEGORY_SEED;
 
 export const ANALYSIS_ARTICLES = [
   {
@@ -295,36 +366,125 @@ export const ANALYSIS_ARTICLES = [
   }
 ];
 
-export function getAnalysisArticles(categoryId = 'all') {
-  if (!categoryId || categoryId === 'all') {
-    return ANALYSIS_ARTICLES;
+function normalizePublicEssay(essay) {
+  const label = essay.categoryLabel
+    || (readJson(ANALYSIS_CATEGORIES_KEY) || ANALYSIS_CATEGORY_SEED).find((row) => row.id === essay.category)?.label
+    || 'Analysis';
+
+  return {
+    ...essay,
+    categoryLabel: label,
+    thumbnail: mediaSrc(essay.thumbnail, essay.thumbnail),
+    hero: mediaSrc(essay.hero, essay.hero),
+    body: bodyToMarkdown(essay.body)
+  };
+}
+
+function getCatalog() {
+  const stored = readJson(ANALYSIS_ESSAYS_KEY);
+  const published = stored
+    ? stored.filter((row) => row.status !== 'draft').map(normalizePublicEssay)
+    : [];
+
+  if (published.length) {
+    return published;
   }
 
-  return ANALYSIS_ARTICLES.filter((row) => row.category === categoryId);
+  return ANALYSIS_ARTICLES.map(normalizePublicEssay);
+}
+
+export function getAnalysisArticles(categoryId = 'all') {
+  const rows = getCatalog();
+
+  if (!categoryId || categoryId === 'all') {
+    return rows;
+  }
+
+  return rows.filter((row) => row.category === categoryId);
 }
 
 export function getAnalysisArticle(slug) {
-  return ANALYSIS_ARTICLES.find((row) => row.slug === slug) || null;
+  return getCatalog().find((row) => row.slug === slug || row.id === slug) || null;
 }
 
 export function getCategoryLabel(categoryId) {
-  return ANALYSIS_CATEGORIES.find((item) => item.id === categoryId)?.label || 'Analysis';
+  return getAnalysisCategories().find((item) => item.id === categoryId)?.label || 'Analysis';
 }
 
 export function getDiscussedArticles(excludeSlug, limit = 3) {
-  return ANALYSIS_ARTICLES
-    .filter((row) => row.slug !== excludeSlug)
+  return getCatalog()
+    .filter((row) => row.slug !== excludeSlug && row.id !== excludeSlug)
     .sort((left, right) => (right.arguments || 0) - (left.arguments || 0))
     .slice(0, limit);
 }
 
 export function getRelatedArticles(excludeSlug, limit = 3) {
   const current = getAnalysisArticle(excludeSlug);
-  const others = ANALYSIS_ARTICLES.filter((row) => row.slug !== excludeSlug);
+  const others = getCatalog().filter((row) => row.slug !== excludeSlug && row.id !== excludeSlug);
   const same = others.filter((row) => row.category === current?.category);
   const rest = others.filter((row) => row.category !== current?.category);
 
   return [...same, ...rest].slice(0, limit);
+}
+
+function presentPublicPost(post) {
+  return {
+    ...post,
+    thumbnail: mediaSrc(post.thumbnail, ''),
+    hero: mediaSrc(post.hero, ''),
+    body: bodyToMarkdown(post.body),
+    comments: (post.comments || []).map(normalizeComment)
+  };
+}
+
+let catalogCache = null;
+let categoryCache = null;
+
+export async function fetchAnalysisCatalog() {
+  const [{ data: catData }, { data: postData }] = await Promise.all([
+    api('/analysis/categories'),
+    api('/analysis/posts')
+  ]);
+
+  categoryCache = [{ id: 'all', label: 'Analyze', slug: 'all' }, ...catData.categories];
+  catalogCache = postData.posts.map(presentPublicPost);
+
+  return { categories: categoryCache, articles: catalogCache };
+}
+
+export async function fetchAnalysisArticle(slug) {
+  const [{ data: postData }, relatedRes, discussedRes] = await Promise.all([
+    api(`/analysis/posts/${encodeURIComponent(slug)}`),
+    api(`/analysis/posts/${encodeURIComponent(slug)}/related`).catch(() => ({ data: { posts: [] } })),
+    api('/analysis/posts/discussed').catch(() => ({ data: { posts: [] } }))
+  ]);
+
+  return {
+    article: presentPublicPost(postData.post),
+    related: (relatedRes.data.posts || []).map(presentPublicPost),
+    discussed: (discussedRes.data.posts || [])
+      .filter((row) => row.slug !== slug)
+      .map(presentPublicPost)
+      .slice(0, 3)
+  };
+}
+
+export async function postAnalysisComment(slug, payload) {
+  const { data } = await api(`/analysis/posts/${encodeURIComponent(slug)}/comments`, {
+    method: 'POST',
+    body: payload
+  });
+
+  return normalizeComment(data.comment);
+}
+
+export async function voteAnalysisComment(id, direction) {
+  const { data } = await api(`/analysis/comments/${encodeURIComponent(id)}/vote`, {
+    method: 'POST',
+    body: { direction }
+  });
+
+  return normalizeComment(data.comment);
 }
 
 export function normalizeComment(comment) {
@@ -339,7 +499,7 @@ export function normalizeComment(comment) {
 }
 
 export function getAllArguments() {
-  return ANALYSIS_ARTICLES.flatMap((article) => (
+  return getCatalog().flatMap((article) => (
     (article.comments || []).map((comment) => ({
       ...normalizeComment(comment),
       articleSlug: article.slug,

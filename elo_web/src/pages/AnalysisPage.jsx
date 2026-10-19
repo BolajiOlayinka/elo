@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, FilterIcon, StarIcon } from '../components/Icons.jsx';
 import { SiteFooter } from '../components/SiteFooter.jsx';
-import { ANALYSIS_CATEGORIES, getAnalysisArticles } from '../data/analysis.js';
+import { fetchAnalysisCatalog } from '../data/analysis.js';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import { localizeArticle } from '../i18n/localize.js';
 
@@ -46,10 +46,25 @@ export default function AnalysisPage() {
   const { t } = useLanguage();
   const [category, setCategory] = useState('all');
   const [page, setPage] = useState(1);
-  const articles = useMemo(() => getAnalysisArticles(category), [category]);
+  const [categories, setCategories] = useState([]);
+  const [catalog, setCatalog] = useState([]);
+  const [error, setError] = useState('');
+  const articles = useMemo(
+    () => (category === 'all' ? catalog : catalog.filter((row) => row.category === category || row.categoryId === category)),
+    [catalog, category]
+  );
   const pageCount = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const visible = articles.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    fetchAnalysisCatalog()
+      .then(({ categories: desks, articles: posts }) => {
+        setCategories(desks);
+        setCatalog(posts);
+      })
+      .catch((err) => setError(err.message));
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -67,19 +82,23 @@ export default function AnalysisPage() {
       <section className="analysis-toolbar">
         <div className="wrap">
           <div className="analysis-toolbar-inner" role="tablist" aria-label={t('analysis.topic')}>
-            {ANALYSIS_CATEGORIES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={category === item.id}
-                className={category === item.id ? 'is-active' : ''}
-                onClick={() => setCategory(item.id)}
-              >
-                {category === item.id ? <StarIcon /> : null}
-                {t(`analysis.cat.${item.id}`, item.label)}
-              </button>
-            ))}
+            {categories.map((item) => {
+              const value = item.id === 'all' ? 'all' : item.slug || item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={category === value}
+                  className={category === value ? 'is-active' : ''}
+                  onClick={() => setCategory(value)}
+                >
+                  {category === value ? <StarIcon /> : null}
+                  {t(`analysis.cat.${item.slug || item.id}`, item.label)}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -97,6 +116,7 @@ export default function AnalysisPage() {
                 {t('common.newestFirst')}
               </p>
             </div>
+            {error ? <p className="analysis-card-excerpt">{error}</p> : null}
             <div className="analysis-grid">
               {visible.map((article) => (
                 <AnalysisCard key={article.id} article={article} />

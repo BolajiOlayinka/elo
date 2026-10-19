@@ -72,6 +72,15 @@ export function IconBlog() {
   );
 }
 
+export function IconEssay() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3.5 3h6.2L12.5 6v7H3.5V3Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M9.6 3.2V6h2.7M5 8.4h6M5 10.6h4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function IconChevron() {
   return (
     <svg className="chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">

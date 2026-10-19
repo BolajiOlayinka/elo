@@ -196,7 +196,9 @@ export const PERMISSIONS = [
   'Manage staff',
   'Manage roles',
   'Publish ratings',
+  'Publish analysis',
   'Moderate comments',
+  'Moderate debate',
   'Run ingest'
 ];
 
@@ -217,13 +219,13 @@ export const ROLES = [
     id: 'analyst',
     name: 'Analyst',
     description: 'Tune point weights and inspect ratings.',
-    permissions: ['View dashboard', 'View analytics', 'Edit point weights', 'Publish ratings']
+    permissions: ['View dashboard', 'View analytics', 'Edit point weights', 'Publish ratings', 'Publish analysis']
   },
   {
     id: 'editor',
     name: 'Editor',
     description: 'Update copy and public-facing records.',
-    permissions: ['View dashboard', 'View analytics', 'Publish ratings', 'Moderate comments']
+    permissions: ['View dashboard', 'View analytics', 'Publish ratings', 'Publish analysis', 'Moderate comments', 'Moderate debate']
   },
   {
     id: 'viewer',

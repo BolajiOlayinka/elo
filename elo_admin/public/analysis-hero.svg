@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720" fill="none">
+  <rect width="1600" height="720" fill="#0B141C"/>
+  <rect x="80" y="70" width="1440" height="580" rx="18" fill="#131D27" stroke="#285051"/>
+  <path d="M800 90v540M80 360h1440" stroke="#285051" stroke-width="2"/>
+  <circle cx="800" cy="360" r="88" stroke="#285051" stroke-width="2"/>
+  <rect x="80" y="210" width="170" height="300" rx="8" stroke="#285051"/>
+  <rect x="1350" y="210" width="170" height="300" rx="8" stroke="#285051"/>
+  <text x="140" y="150" fill="#BCF766" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="600">EloStats Analysis</text>
+  <text x="140" y="190" fill="#94A3B8" font-family="Inter, system-ui, sans-serif" font-size="18">Comparison essay / peak season</text>
+</svg>

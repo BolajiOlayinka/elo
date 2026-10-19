@@ -29,6 +29,7 @@ const { fileExists, readJson, writeJson } = require('./lib/json-store');
 const { createProgress, describeDbTarget } = require('./lib/progress');
 const { formatVerifyReport, verifyDownloadedSeasons } = require('./lib/verify-download');
 const {
+    applyOwnGoals,
     coachesToRows,
     collectCoachesFromFiles,
     collectFromEvents,
@@ -36,12 +37,16 @@ const {
     collectFromMatchPlayers,
     collectFromTeamStats,
     collectPlayersFromProfiles,
+    coverageFlags,
+    homeVenuesByTeam,
     mapMatches,
     mapStandings,
     mapTeams,
     mapVenues,
+    neutralFlag,
     playersToRows
 } = require('./lib/map-season');
+const { deriveLeagueMeta } = require('./lib/league-meta');
 const { rawFile } = require('./lib/paths');
 const { batchInsert, batchUpsert, uniqueBy } = require('./lib/upsert');
 
@@ -196,6 +201,12 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
         ...row,
         venue_id: row.venue_id && venueIds.has(row.venue_id) ? row.venue_id : null
     }));
+    const homeVenues = homeVenuesByTeam(matches, teamRows);
+
+    for (const match of matches) {
+        match.is_neutral = neutralFlag(match, homeVenues);
+    }
+
     const knownTeamIds = new Set(teams.map((row) => row.id));
 
     for (const match of matches) {
@@ -218,6 +229,19 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
     const { coaches, tenures } = collectCoachesFromFiles(coachPayloads, knownTeamIds);
 
     const matchBundles = await loadMatchFiles(matches, players, coaches, progress, leagueId, seasonYear);
+    const teamsBeforeRefs = teams.length;
+
+    // Events, lineups and match stats sometimes use a different API id for the
+    // same club than the fixture (e.g. Riga 10124 vs Riga FC 2263).
+    for (const team of matchBundles.referencedTeams) {
+        addStubTeam(teams, knownTeamIds, team.id, new Date(), team.name);
+    }
+
+    if (teams.length > teamsBeforeRefs) {
+        await batchUpsert(knex, 'teams', teams.slice(teamsBeforeRefs), ['id'], [
+            'name', 'code', 'founded', 'is_national', 'logo_url', 'country_id', 'country_name', 'venue_id', 'updated_at'
+        ]);
+    }
     const playerRows = playersToRows(players);
     const coachRows = coachesToRows(coaches).map((row) => ({
         ...row,
@@ -235,11 +259,22 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
         'nationality', 'height', 'weight', 'photo_url', 'current_team_id', 'updated_at'
     ]);
     await replaceTenures(coachRows.map((row) => row.id), tenures);
+
+    for (const match of matches) {
+        Object.assign(match, matchBundles.coverage.get(match.id) || {
+            has_events: false,
+            has_lineups: false,
+            has_team_stats: false,
+            has_player_stats: false
+        });
+    }
+
     await batchUpsert(knex, 'matches', matches, ['id'], [
         'league_id', 'season_year', 'round', 'venue_id', 'venue_name', 'venue_city', 'referee',
         'kickoff_at', 'kickoff_unix', 'timezone', 'status_short', 'status_long', 'elapsed_minutes',
         'home_team_id', 'away_team_id', 'home_goals', 'away_goals', 'home_goals_ht', 'away_goals_ht',
-        'home_goals_et', 'away_goals_et', 'home_penalties', 'away_penalties', 'home_winner', 'updated_at'
+        'home_goals_et', 'away_goals_et', 'home_penalties', 'away_penalties', 'home_winner',
+        'is_neutral', 'has_events', 'has_lineups', 'has_team_stats', 'has_player_stats', 'updated_at'
     ]);
 
     const matchIds = matches.map((row) => row.id);
@@ -252,7 +287,7 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
     await batchInsert(knex, 'lineup_players', matchBundles.lineups);
     await batchUpsert(knex, 'player_match_stats', matchBundles.playerStats, ['match_id', 'player_id'], [
         'team_id', 'minutes', 'shirt_number', 'position', 'rating', 'captain', 'substitute', 'offsides',
-        'shots_total', 'shots_on', 'goals', 'goals_conceded', 'assists', 'saves', 'passes_total', 'passes_key',
+        'shots_total', 'shots_on', 'goals', 'own_goals', 'goals_conceded', 'assists', 'saves', 'passes_total', 'passes_key',
         'passes_accuracy', 'tackles_total', 'blocks', 'interceptions', 'duels_total', 'duels_won',
         'dribbles_attempts', 'dribbles_success', 'dribbles_past', 'fouls_drawn', 'fouls_committed',
         'yellow_cards', 'red_cards', 'penalties_won', 'penalties_committed', 'penalties_scored',
@@ -262,7 +297,7 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
         'shots_on_goal', 'shots_off_goal', 'shots_total', 'shots_blocked', 'shots_inside_box',
         'shots_outside_box', 'fouls', 'corners', 'offsides', 'ball_possession', 'yellow_cards',
         'red_cards', 'goalkeeper_saves', 'passes_total', 'passes_accurate', 'passes_accuracy',
-        'extras', 'updated_at'
+        'expected_goals', 'extras', 'updated_at'
     ]);
     await batchUpsert(
         knex,
@@ -283,6 +318,21 @@ async function loadSeason(leagueId, seasonYear, args, progress) {
     );
 
     const standingRows = mapStandings(standingsPayload, leagueId, seasonYear);
+    const teamsBeforeStubs = teams.length;
+
+    // Standings can list teams that never appear in fixtures (preliminary rounds
+    // the API omits). They still need a teams row for the foreign key.
+    for (const group of (standingsPayload.response || [])[0]?.league?.standings || []) {
+        for (const item of group) {
+            addStubTeam(teams, knownTeamIds, item.team?.id, new Date(), item.team?.name);
+        }
+    }
+
+    if (teams.length > teamsBeforeStubs) {
+        await batchUpsert(knex, 'teams', teams.slice(teamsBeforeStubs), ['id'], [
+            'name', 'code', 'founded', 'is_national', 'logo_url', 'country_id', 'country_name', 'venue_id', 'updated_at'
+        ]);
+    }
 
     await batchUpsert(knex, 'standings', standingRows, ['league_id', 'season_year', 'team_id', 'group_name'], [
         'rank', 'points', 'goal_diff', 'form', 'status', 'description', 'played', 'wins', 'draws',
@@ -321,7 +371,31 @@ async function ensureStubTeams(matches, teams) {
     }
 }
 
-function addStubTeam(teams, known, teamId, now) {
+function rememberPayloadTeams(referencedTeams, eventsPayload, lineupsPayload, statsPayload, playersPayload) {
+    const remember = (team) => {
+        if (team?.id && !referencedTeams.has(team.id)) {
+            referencedTeams.set(team.id, team.name || null);
+        }
+    };
+
+    for (const item of eventsPayload?.response || []) {
+        remember(item.team);
+    }
+
+    for (const item of lineupsPayload?.response || []) {
+        remember(item.team);
+    }
+
+    for (const side of statsPayload?.response || []) {
+        remember(side.team);
+    }
+
+    for (const side of playersPayload?.response || []) {
+        remember(side.team);
+    }
+}
+
+function addStubTeam(teams, known, teamId, now, teamName) {
     if (!teamId || known.has(teamId)) {
         return;
     }
@@ -329,7 +403,7 @@ function addStubTeam(teams, known, teamId, now) {
     known.add(teamId);
     teams.push({
         id: teamId,
-        name: `Team ${teamId}`,
+        name: teamName || `Team ${teamId}`,
         code: null,
         founded: null,
         is_national: false,
@@ -381,6 +455,9 @@ async function loadMatchFiles(matches, players, coaches, progress, leagueId, sea
     const matchCoaches = [];
     const playerStats = [];
     const teamStats = [];
+    const coverage = new Map();
+    const matchesWithEvents = new Set();
+    const referencedTeams = new Map();
     const total = matches.length;
 
     for (let index = 0; index < matches.length; index += 1) {
@@ -395,6 +472,19 @@ async function loadMatchFiles(matches, players, coaches, progress, leagueId, sea
         const statsPayload = await readJson(path.join(dir, 'statistics.json'));
         const playersPayload = await readJson(path.join(dir, 'players.json'));
         const lineupBundle = collectFromLineups(lineupsPayload, match.id, players, coaches);
+        const flags = coverageFlags({
+            events: eventsPayload,
+            lineups: lineupsPayload,
+            statistics: statsPayload,
+            players: playersPayload
+        });
+
+        coverage.set(match.id, flags);
+        rememberPayloadTeams(referencedTeams, eventsPayload, lineupsPayload, statsPayload, playersPayload);
+
+        if (flags.has_events) {
+            matchesWithEvents.add(match.id);
+        }
 
         events.push(...collectFromEvents(eventsPayload, match.id, players));
         lineups.push(...lineupBundle.lineupRows);
@@ -403,14 +493,20 @@ async function loadMatchFiles(matches, players, coaches, progress, leagueId, sea
         teamStats.push(...collectFromTeamStats(statsPayload, match.id));
     }
 
+    const uniquePlayerStats = uniqueBy(
+        playerStats.filter((row) => row.team_id && row.player_id),
+        (row) => `${row.match_id}:${row.player_id}`
+    );
+
+    applyOwnGoals(uniquePlayerStats, events, matchesWithEvents);
+
     return {
         events,
         lineups,
+        coverage,
+        referencedTeams: [...referencedTeams.entries()].map(([id, teamName]) => ({ id, name: teamName })),
         matchCoaches: uniqueBy(matchCoaches, (row) => `${row.match_id}:${row.team_id}`),
-        playerStats: uniqueBy(
-            playerStats.filter((row) => row.team_id && row.player_id),
-            (row) => `${row.match_id}:${row.player_id}`
-        ),
+        playerStats: uniquePlayerStats,
         teamStats: uniqueBy(
             teamStats.filter((row) => row.team_id),
             (row) => `${row.match_id}:${row.team_id}`
@@ -475,6 +571,7 @@ async function upsertLeagues(rows) {
             type: league.type || null,
             logo_url: league.logo || null,
             country_id: country.name ? countryByName.get(country.name) || null : null,
+            ...deriveLeagueMeta(league, country.name),
             updated_at: now
         });
 
@@ -484,9 +581,7 @@ async function upsertLeagues(rows) {
     const uniqueLeagues = uniqueBy(leagues, (row) => row.id);
     const uniqueSeasons = uniqueBy(seasons, (row) => `${row.league_id}:${row.year}`);
 
-    await batchUpsert(knex, 'leagues', uniqueLeagues, ['id'], [
-        'name', 'type', 'logo_url', 'country_id', 'updated_at'
-    ]);
+    await upsertLeagueRows(uniqueLeagues);
     await batchUpsert(knex, 'competition_seasons', uniqueSeasons, ['league_id', 'year'], [
         'start_date', 'end_date', 'is_current', 'coverage_events', 'coverage_lineups',
         'coverage_fixture_stats', 'coverage_player_match_stats', 'coverage_standings',
@@ -495,6 +590,38 @@ async function upsertLeagues(rows) {
     ]);
 
     return { leagues: uniqueLeagues.length, seasons: uniqueSeasons.length };
+}
+
+/**
+ * Catalog fields always refresh. Derived metadata (kind / tier / gender / age_group)
+ * only fills nulls, so a value corrected in admin is not overwritten by the next load.
+ * in_scope is never written by the loader.
+ */
+async function upsertLeagueRows(rows) {
+    const size = 200;
+
+    for (let index = 0; index < rows.length; index += size) {
+        const chunk = rows.slice(index, index + size);
+
+        if (chunk.length === 0) {
+            continue;
+        }
+
+        await knex('leagues')
+            .insert(chunk)
+            .onConflict('id')
+            .merge({
+                name: knex.raw('excluded.name'),
+                type: knex.raw('excluded.type'),
+                logo_url: knex.raw('excluded.logo_url'),
+                country_id: knex.raw('excluded.country_id'),
+                kind: knex.raw('COALESCE(leagues.kind, excluded.kind)'),
+                tier: knex.raw('COALESCE(leagues.tier, excluded.tier)'),
+                gender: knex.raw('COALESCE(leagues.gender, excluded.gender)'),
+                age_group: knex.raw('COALESCE(leagues.age_group, excluded.age_group)'),
+                updated_at: knex.raw('excluded.updated_at')
+            });
+    }
 }
 
 function pushSeasons(seasons, leagueId, seasonRows, now) {

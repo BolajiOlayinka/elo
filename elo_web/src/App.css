@@ -2641,11 +2641,39 @@
   letter-spacing: -0.03em;
 }
 
-.analysis-block p {
-  margin: 0;
+.analysis-block p,
+.analysis-body p,
+.analysis-body ul,
+.analysis-body blockquote {
+  margin: 0 0 1em;
   color: #c6cad2;
   font-size: 1rem;
   line-height: 1.65;
+}
+
+.analysis-body h2,
+.analysis-body h3 {
+  margin: 1.4em 0 0.6em;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.analysis-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 10px;
+}
+
+.analysis-body ul {
+  padding-left: 1.2em;
+}
+
+.analysis-body blockquote {
+  padding: 0 0 0 14px;
+  border-left: 3px solid #BCF766;
 }
 
 .analysis-debate-head {

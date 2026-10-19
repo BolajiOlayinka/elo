@@ -161,6 +161,36 @@ class AuthService {
         };
     }
 
+    static async staffLogin({ email, password }) {
+        const user = await UserService.getUserByEmail(email);
+
+        if (!user) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const is_password_valid = await bcrypt.compare(password, user.password);
+
+        if (!is_password_valid) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const staff_roles = ['admin', 'editor'];
+        const matched = (user.roles || []).find((role) => staff_roles.includes(role));
+
+        if (!matched) {
+            throw new UnauthorizedException('Staff access required');
+        }
+
+        const token = this.generateToken(user, matched);
+        const user_without_password = { ...user };
+        delete user_without_password.password;
+
+        return {
+            user: user_without_password,
+            token
+        };
+    }
+
     /**
      * Generate JWT token for user
      * @param {Object} user - User object
