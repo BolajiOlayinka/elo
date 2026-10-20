@@ -14,7 +14,8 @@ function parseIngestArgs(argv) {
         season: null,
         player: null,
         coach: null,
-        maxRequests: null
+        maxRequests: null,
+        year: null
     };
 
     for (let index = 2; index < argv.length; index += 1) {
@@ -53,6 +54,9 @@ function parseIngestArgs(argv) {
         } else if (flag === '--max-requests') {
             args.maxRequests = Number(argv[index + 1]);
             index += 1;
+        } else if (flag === '--year') {
+            args.year = Number(argv[index + 1]);
+            index += 1;
         } else {
             throw new Error(`Unknown argument: ${flag}`);
         }
@@ -76,6 +80,10 @@ function parseIngestArgs(argv) {
 
     if (args.maxRequests != null && (!Number.isFinite(args.maxRequests) || args.maxRequests < 0)) {
         throw new Error('--max-requests must be 0 (no local cap) or a positive number');
+    }
+
+    if (args.year != null && !Number.isFinite(args.year)) {
+        throw new Error('--year must be a birth year (e.g. 1960)');
     }
 
     return args;

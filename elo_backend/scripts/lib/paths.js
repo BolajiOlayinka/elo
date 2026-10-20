@@ -23,6 +23,10 @@ function statsbombExtractedFile(...parts) {
     return path.join(STATSBOMB_RAW_DIR, 'extracted', ...parts);
 }
 
+function wikidataExtractedFile(...parts) {
+    return path.join(WIKIDATA_RAW_DIR, 'extracted', ...parts);
+}
+
 module.exports = {
     ROOT,
     RAW_DIR,
@@ -31,5 +35,6 @@ module.exports = {
     rawFile,
     wikidataFile,
     statsbombFile,
-    statsbombExtractedFile
+    statsbombExtractedFile,
+    wikidataExtractedFile
 };

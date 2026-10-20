@@ -30,6 +30,11 @@ const ADVANCED = [
     'progressive_carries', 'progressive_passes', 'passes_into_box'
 ];
 
+const NAME_PARTICLES = new Set([
+    'i', 'y', 'de', 'da', 'do', 'dos', 'das', 'del', 'la', 'el',
+    'van', 'von', 'di', 'le', 'jr', 'junior', 'jnr'
+]);
+
 let knex = null;
 let stopRequested = false;
 
@@ -100,12 +105,14 @@ async function main() {
             return;
         }
 
-        await progress.log(`Done. seasons=${done} createdPlayers=${context.created.players}`
-            + ` createdMatches=${context.created.matches} skippedPlayers=${context.skipped.length}`);
+        const skipped = [...new Set(context.skipped)];
 
-        if (context.skipped.length) {
-            await progress.log(`Skipped ${context.skipped.length} ambiguous player name(s). First: ${
-                context.skipped.slice(0, 5).join('; ')
+        await progress.log(`Done. seasons=${done} createdPlayers=${context.created.players}`
+            + ` createdMatches=${context.created.matches} skippedPlayers=${skipped.length}`);
+
+        if (skipped.length) {
+            await progress.log(`Skipped ${skipped.length} ambiguous player name(s). First: ${
+                skipped.slice(0, 5).join('; ')
             }`);
         }
     } finally {
@@ -719,62 +726,135 @@ async function resolvePlayer(context, person, pending, now) {
 }
 
 function matchPlayer(context, person) {
-    const keys = nameKeys(person.name, null, null);
-
-    if (person.nickname) {
-        for (const key of nameKeys(person.nickname, null, null)) {
-            keys.add(key);
-        }
-    }
-
-    const hits = [];
-
-    for (const key of keys) {
-        for (const row of context.playersByName.get(key) || []) {
-            if (!hits.some((item) => item.id === row.id)) {
-                hits.push(row);
-            }
-        }
-    }
-
     const country = foldName(person.country);
+    const stages = [
+        lookupName(context, foldName(person.name)),
+        lookupName(context, foldName(person.nickname))
+    ];
 
-    if (hits.length === 1) {
-        return hits[0];
+    for (const key of consecutiveKeys(person.nickname, { initials: true })) {
+        stages.push(lookupName(context, key));
     }
 
-    if (hits.length > 1) {
-        const narrowed = country
-            ? hits.filter((row) => foldName(row.nationality) === country)
-            : hits;
+    for (const key of consecutiveKeys(person.name)) {
+        stages.push(lookupName(context, key));
+    }
 
-        if (narrowed.length === 1) {
-            return narrowed[0];
+    stages.push(lookupLast(context, lastToken(person.nickname)));
+    stages.push(lookupLast(context, lastToken(person.name)));
+
+    for (const hits of stages) {
+        const picked = pickFrom(hits, country, person);
+
+        if (picked) {
+            return picked;
         }
-
-        return 'ambiguous';
-    }
-
-    const last = foldName(person.name).split(' ').filter(Boolean).pop();
-    const lastHits = context.playersByLast.get(last) || [];
-
-    if (lastHits.length === 1) {
-        return lastHits[0];
-    }
-
-    if (lastHits.length > 1) {
-        const narrowed = country
-            ? lastHits.filter((row) => foldName(row.nationality) === country)
-            : lastHits;
-
-        if (narrowed.length === 1) {
-            return narrowed[0];
-        }
-
-        return 'ambiguous';
     }
 
     return null;
+}
+
+function lookupName(context, key) {
+    return key ? context.playersByName.get(key) || [] : [];
+}
+
+function lookupLast(context, key) {
+    return key ? context.playersByLast.get(key) || [] : [];
+}
+
+function consecutiveKeys(label, { initials = false } = {}) {
+    const parts = foldName(label).split(' ').filter(Boolean);
+    const keys = [];
+
+    for (let len = Math.min(parts.length, 3); len >= 2; len -= 1) {
+        for (let index = 0; index + len <= parts.length; index += 1) {
+            const slice = parts.slice(index, index + len);
+
+            if (slice.length === parts.length) {
+                continue;
+            }
+
+            if (NAME_PARTICLES.has(slice[0]) || NAME_PARTICLES.has(slice[slice.length - 1])) {
+                continue;
+            }
+
+            keys.push(slice.join(' '));
+        }
+    }
+
+    if (initials && parts.length >= 2 && parts[0][0] && !NAME_PARTICLES.has(parts[parts.length - 1])) {
+        keys.push(`${parts[0][0]} ${parts[parts.length - 1]}`);
+    }
+
+    return keys;
+}
+
+function lastToken(label) {
+    const parts = foldName(label).split(' ').filter((part) => part && !NAME_PARTICLES.has(part));
+
+    return parts.pop() || null;
+}
+
+function pickFrom(hits, country, person) {
+    const unique = uniquePeople(hits);
+
+    if (!unique.length) {
+        return null;
+    }
+
+    const byCountry = country
+        ? unique.filter((row) => foldName(row.nationality) === country)
+        : unique;
+    const pool = byCountry.length ? byCountry : unique;
+    const byBirthday = birthdayMatches(pool, person);
+
+    if (byBirthday.length === 1) {
+        return byBirthday[0];
+    }
+
+    if (byBirthday.length > 1) {
+        return 'ambiguous';
+    }
+
+    if (pool.length === 1) {
+        return pool[0];
+    }
+
+    return 'ambiguous';
+}
+
+function birthdayMatches(rows, person) {
+    const want = dobKey(person.birthDate || person.birth_date);
+
+    if (!want) {
+        return [];
+    }
+
+    return rows.filter((row) => dobKey(row.birth_date) === want);
+}
+
+function uniquePeople(rows) {
+    const seen = new Map();
+
+    for (const row of rows) {
+        seen.set(row.id, row);
+    }
+
+    return [...seen.values()];
+}
+
+function dobKey(value) {
+    if (!value) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
+    }
+
+    const text = String(value).slice(0, 10);
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
 }
 
 function nameKeys(label, first, last) {
