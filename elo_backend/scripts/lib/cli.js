@@ -9,6 +9,7 @@ function parseIngestArgs(argv) {
         resume: true,
         verbose: false,
         allowPartial: false,
+        everything: false,
         league: null,
         season: null,
         player: null,
@@ -35,6 +36,8 @@ function parseIngestArgs(argv) {
             args.verbose = true;
         } else if (flag === '--allow-partial') {
             args.allowPartial = true;
+        } else if (flag === '--everything') {
+            args.everything = true;
         } else if (flag === '--league') {
             args.league = Number(argv[index + 1]);
             index += 1;

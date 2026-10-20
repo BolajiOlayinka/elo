@@ -136,8 +136,18 @@ async function profile(type, id) {
     }
 
     const rivals = await repository.listBoardRivals(type, row.rank, id);
+    const trophies = await repository.listTrophies(type, id);
 
-    return { ...row, rivals };
+    return {
+        ...row,
+        rivals,
+        trophies: trophies.map((trophy) => ({
+            competition: trophy.competition_name,
+            country: trophy.country,
+            season: trophy.season,
+            place: trophy.place
+        }))
+    };
 }
 
 async function stats() {

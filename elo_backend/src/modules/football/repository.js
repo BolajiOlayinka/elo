@@ -391,6 +391,19 @@ async function listBoard({ entity, page, limit, q }) {
     };
 }
 
+async function listTrophies(type, id) {
+    const column = type === 'coaches' ? 'coach_id' : 'player_id';
+
+    if (!['players', 'keepers', 'coaches'].includes(type)) {
+        return [];
+    }
+
+    return db('trophies')
+        .where(column, Number(id))
+        .select('competition_name', 'country', 'season', 'place')
+        .orderByRaw('season desc nulls last, competition_name asc');
+}
+
 async function getBoardRow(entity, id) {
     const row = await db('rating_board')
         .where({ entity, entity_id: Number(id) })
@@ -453,6 +466,7 @@ module.exports = {
     replaceBoard,
     listBoard,
     getBoardRow,
+    listTrophies,
     listBoardRivals,
     boardByIds,
     boardHasRows

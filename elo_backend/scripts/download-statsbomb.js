@@ -8,6 +8,9 @@
  *   node scripts/download-statsbomb.js --all
  *
  * Resume skips existing JSON. --fresh re-downloads.
+ * --all downloads the scoped seasons (La Liga 2004/05–2020/21, WC 1958/70/86,
+ * women’s). --everything downloads the full open-data dump.
+ * Freeze-frame / 360 files are not fetched.
  * If you publish analysis from this dump, credit StatsBomb and use their logo.
  */
 
@@ -18,6 +21,7 @@ const { parseIngestArgs } = require('./lib/cli');
 const { fileExists, readJson, writeJson } = require('./lib/json-store');
 const { STATSBOMB_RAW_DIR, statsbombFile } = require('./lib/paths');
 const { createProgress } = require('./lib/progress');
+const { scopedCompetitions } = require('./lib/statsbomb-scope');
 
 const RAW_BASE = 'https://raw.githubusercontent.com/hudl/open-data/master/data';
 const USER_AGENT = process.env.STATSBOMB_USER_AGENT
@@ -56,11 +60,11 @@ async function downloadSmoke(args) {
     const progress = createProgress({ mode: 'statsbomb-smoke', total: 4, dir: STATSBOMB_RAW_DIR });
 
     await progress.log('StatsBomb open-data smoke (GitHub, no key)');
-    const competitions = await fetchToFile(
+    const competitions = scopedCompetitions(await fetchToFile(
         statsbombFile('competitions.json'),
         `${RAW_BASE}/competitions.json`,
         args
-    );
+    ));
     const first = competitions[0];
 
     if (!first) {
@@ -87,11 +91,12 @@ async function downloadSmoke(args) {
 }
 
 async function downloadAll(args) {
-    const competitions = await fetchToFile(
+    const catalog = await fetchToFile(
         statsbombFile('competitions.json'),
         `${RAW_BASE}/competitions.json`,
         args
     );
+    const competitions = scopedCompetitions(catalog, { everything: args.everything });
     const jobs = [];
 
     for (const row of competitions) {
@@ -105,7 +110,9 @@ async function downloadAll(args) {
 
     const progress = createProgress({ mode: 'statsbomb-all', total: jobs.length, dir: STATSBOMB_RAW_DIR });
 
-    await progress.log(`Download ${competitions.length} competition-seasons from hudl/open-data`);
+    await progress.log(`Download ${competitions.length} competition-seasons from hudl/open-data${
+        args.everything ? ' (full dump)' : ' (scoped: La Liga 2004–21, WC 1958/70/86, women’s)'
+    }`);
     await writeManifest();
 
     const matchFiles = await mapPool(jobs, CONCURRENCY, async (job, index) => {
@@ -150,15 +157,10 @@ async function downloadAll(args) {
             url: `${RAW_BASE}/lineups/${matchId}.json`,
             optional: false
         });
-        detailJobs.push({
-            dest: statsbombFile('three-sixty', `${matchId}.json`),
-            url: `${RAW_BASE}/three-sixty/${matchId}.json`,
-            optional: true
-        });
     }
 
     progress.state.total = jobs.length + detailJobs.length;
-    await progress.log(`Fetching events/lineups/360 for ${matchIds.size} matches (${detailJobs.length} files)`);
+    await progress.log(`Fetching events/lineups for ${matchIds.size} matches (${detailJobs.length} files)`);
 
     let done = jobs.length;
 

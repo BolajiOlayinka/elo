@@ -58,16 +58,52 @@ async function createUploadContext() {
     };
 }
 
+function publicObjectUrl(bucket, region, key) {
+    const configured = String(process.env.S3_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+
+    if (configured) {
+        return `${configured}/${key}`;
+    }
+
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+}
+
+async function uploadObject(context, { key, body, contentType }) {
+    const input = {
+        Bucket: context.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType || 'application/octet-stream',
+        CacheControl: 'public, max-age=31536000'
+    };
+
+    if (context.acl !== false) {
+        try {
+            await context.client.send(new PutObjectCommand({ ...input, ACL: 'public-read' }));
+            context.acl = true;
+
+            return key;
+        } catch (error) {
+            const message = String(error.message || error.name || '');
+
+            if (!/ACL|AccessControlList/i.test(message)) {
+                throw error;
+            }
+
+            context.acl = false;
+        }
+    }
+
+    await context.client.send(new PutObjectCommand(input));
+
+    return key;
+}
+
 async function uploadRawFile(context, filePath) {
     const key = s3KeyFor(filePath);
     const body = await fs.readFile(filePath);
 
-    await context.client.send(new PutObjectCommand({
-        Bucket: context.bucket,
-        Key: key,
-        Body: body,
-        ContentType: 'application/json'
-    }));
+    await uploadObject(context, { key, body, contentType: 'application/json' });
 
     return key;
 }
@@ -78,5 +114,7 @@ module.exports = {
     resolveBucketRegion,
     bucketName,
     createUploadContext,
+    publicObjectUrl,
+    uploadObject,
     uploadRawFile
 };

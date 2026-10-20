@@ -361,6 +361,7 @@ function careerOf(seasons, type) {
             type,
             minutes: 0,
             eloSum: 0,
+            seasonPoints: 0,
             peakEloNum: 0,
             goals: 0,
             assists: 0,
@@ -370,6 +371,7 @@ function careerOf(seasons, type) {
 
         person.minutes += row.minutes;
         person.eloSum += row.playerElo * row.minutes;
+        person.seasonPoints += num(row.seasonPoints);
         person.goals += row.goals;
         person.assists += row.assists;
         person.matches += row.appearances;
@@ -398,7 +400,10 @@ function careerOf(seasons, type) {
 }
 
 function shapePerson(person) {
-    const elo = person.minutes ? person.eloSum / person.minutes : person.playerElo;
+    const pile = person.type === 'players' || person.type === 'keepers';
+    const elo = pile
+        ? person.seasonPoints
+        : (person.minutes ? person.eloSum / person.minutes : person.playerElo);
     const seasons = person.seasons
         .filter((season) => season.year !== '0')
         .sort((left, right) => left.year.localeCompare(right.year));
